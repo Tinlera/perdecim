@@ -7,8 +7,11 @@ import useAuthStore from './store/authStore'
 const Home = lazy(() => import('./pages/Home'))
 const Products = lazy(() => import('./pages/Products'))
 const ProductDetail = lazy(() => import('./pages/ProductDetail'))
+const Categories = lazy(() => import('./pages/Categories'))
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
 const Checkout = lazy(() => import('./pages/Checkout'))
 const Cart = lazy(() => import('./pages/Cart'))
 const Account = lazy(() => import('./pages/Account'))
@@ -112,6 +115,22 @@ export default function App() {
             </Layout>
           }
         />
+        <Route
+          path="/categories"
+          element={
+            <Layout>
+              <Categories />
+            </Layout>
+          }
+        />
+        <Route
+          path="/categories/:slug"
+          element={
+            <Layout>
+              <Products />
+            </Layout>
+          }
+        />
 
         {/* Auth Routes (Guest Only) */}
         <Route
@@ -127,6 +146,22 @@ export default function App() {
           element={
             <GuestRoute>
               <Register />
+            </GuestRoute>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <GuestRoute>
+              <ForgotPassword />
+            </GuestRoute>
+          }
+        />
+        <Route
+          path="/reset-password/:token"
+          element={
+            <GuestRoute>
+              <ResetPassword />
             </GuestRoute>
           }
         />

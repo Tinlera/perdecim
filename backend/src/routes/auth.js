@@ -27,6 +27,18 @@ router.post('/register', authLimiter, registerValidation, authController.registe
 router.post('/login', authLimiter, loginValidation, authController.login);
 router.post('/refresh-token', authController.refreshToken);
 
+// Password reset routes (public)
+router.post('/forgot-password', authLimiter, [
+  body('email').isEmail().withMessage('Geçerli bir email adresi girin')
+], authController.forgotPassword);
+
+router.post('/reset-password', authLimiter, [
+  body('token').notEmpty().withMessage('Token gerekli'),
+  body('newPassword').isLength({ min: 6 }).withMessage('Şifre en az 6 karakter olmalı')
+], authController.resetPassword);
+
+router.get('/verify-reset-token/:token', authController.verifyResetToken);
+
 // 2FA routes
 router.post('/2fa/verify', authController.verify2FA);
 

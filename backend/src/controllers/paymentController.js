@@ -76,9 +76,9 @@ exports.initializePayment = async (req, res, next) => {
         surname: user.lastName,
         gsmNumber: user.phone || '+905350000000',
         email: user.email,
-        identityNumber: '11111111111', // TC Kimlik (demo için sabit)
+        identityNumber: order.shippingAddress.identityNumber || '11111111111',
         registrationAddress: order.shippingAddress.addressLine,
-        ip: req.ip || '127.0.0.1',
+        ip: req.ip || req.connection?.remoteAddress || '127.0.0.1',
         city: order.shippingAddress.city,
         country: 'Turkey'
       },
@@ -89,10 +89,12 @@ exports.initializePayment = async (req, res, next) => {
         address: order.shippingAddress.addressLine
       },
       billingAddress: {
-        contactName: `${order.billingAddress.firstName} ${order.billingAddress.lastName}`,
-        city: order.billingAddress.city,
+        contactName: order.billingAddress 
+          ? `${order.billingAddress.firstName} ${order.billingAddress.lastName}`
+          : `${order.shippingAddress.firstName} ${order.shippingAddress.lastName}`,
+        city: order.billingAddress?.city || order.shippingAddress.city,
         country: 'Turkey',
-        address: order.billingAddress.addressLine
+        address: order.billingAddress?.addressLine || order.shippingAddress.addressLine
       },
       basketItems
     };
@@ -285,9 +287,17 @@ exports.refundPayment = async (req, res, next) => {
   }
 };
 
-// Test ödeme (Sandbox)
+// Test ödeme (Sandbox) - SADECE DEVELOPMENT ORTAMINDA ÇALIŞIR
 exports.testPayment = async (req, res, next) => {
   try {
+    // Production ortamında bu endpoint'i devre dışı bırak
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(403).json({
+        success: false,
+        message: 'Test ödeme sadece geliştirme ortamında kullanılabilir'
+      });
+    }
+
     const { orderId } = req.body;
     const userId = req.user.id;
 
@@ -299,6 +309,13 @@ exports.testPayment = async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: 'Sipariş bulunamadı'
+      });
+    }
+
+    if (order.paymentStatus === 'paid') {
+      return res.status(400).json({
+        success: false,
+        message: 'Bu sipariş zaten ödenmiş'
       });
     }
 

@@ -13,7 +13,6 @@ import {
   Settings,
   LogOut,
   Menu,
-  X,
   TrendingUp,
   DollarSign,
   ShoppingBag,
@@ -24,7 +23,17 @@ import { adminAPI } from '../../services/api'
 import { formatPrice } from '../../lib/utils'
 import { cn } from '../../lib/utils'
 
-// Admin sub-pages (simplified versions - would be full pages in production)
+// Import admin sub-pages
+import AdminProducts from './Products'
+import AdminCategories from './Categories'
+import AdminOrders from './Orders'
+import AdminUsers from './Users'
+import AdminCoupons from './Coupons'
+import AdminBanners from './Banners'
+import AdminPages from './Pages'
+import AdminSettings from './Settings'
+
+// Dashboard Overview Component
 const AdminOverview = () => {
   const [stats, setStats] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -87,62 +96,6 @@ const AdminOverview = () => {
     </div>
   )
 }
-
-const AdminProducts = () => (
-  <div className="bg-white rounded-xl p-6">
-    <h1 className="text-2xl font-bold text-charcoal-700 mb-6">Ürün Yönetimi</h1>
-    <p className="text-charcoal-500">Ürün listesi ve yönetim araçları burada olacak.</p>
-  </div>
-)
-
-const AdminCategories = () => (
-  <div className="bg-white rounded-xl p-6">
-    <h1 className="text-2xl font-bold text-charcoal-700 mb-6">Kategori Yönetimi</h1>
-    <p className="text-charcoal-500">Kategori listesi ve yönetim araçları burada olacak.</p>
-  </div>
-)
-
-const AdminOrders = () => (
-  <div className="bg-white rounded-xl p-6">
-    <h1 className="text-2xl font-bold text-charcoal-700 mb-6">Sipariş Yönetimi</h1>
-    <p className="text-charcoal-500">Sipariş listesi ve yönetim araçları burada olacak.</p>
-  </div>
-)
-
-const AdminUsers = () => (
-  <div className="bg-white rounded-xl p-6">
-    <h1 className="text-2xl font-bold text-charcoal-700 mb-6">Kullanıcı Yönetimi</h1>
-    <p className="text-charcoal-500">Kullanıcı listesi ve rol yönetimi burada olacak.</p>
-  </div>
-)
-
-const AdminCoupons = () => (
-  <div className="bg-white rounded-xl p-6">
-    <h1 className="text-2xl font-bold text-charcoal-700 mb-6">Kupon Yönetimi</h1>
-    <p className="text-charcoal-500">Kupon listesi ve yönetim araçları burada olacak.</p>
-  </div>
-)
-
-const AdminBanners = () => (
-  <div className="bg-white rounded-xl p-6">
-    <h1 className="text-2xl font-bold text-charcoal-700 mb-6">Banner/Slider Yönetimi</h1>
-    <p className="text-charcoal-500">Banner listesi ve yönetim araçları burada olacak.</p>
-  </div>
-)
-
-const AdminPages = () => (
-  <div className="bg-white rounded-xl p-6">
-    <h1 className="text-2xl font-bold text-charcoal-700 mb-6">Sayfa Yönetimi</h1>
-    <p className="text-charcoal-500">Hakkımızda, İletişim vb. sayfaların yönetimi burada olacak.</p>
-  </div>
-)
-
-const AdminSettings = () => (
-  <div className="bg-white rounded-xl p-6">
-    <h1 className="text-2xl font-bold text-charcoal-700 mb-6">Site Ayarları</h1>
-    <p className="text-charcoal-500">Genel site ayarları, animasyon kontrolü vb. burada olacak.</p>
-  </div>
-)
 
 const menuItems = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },

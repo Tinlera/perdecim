@@ -83,6 +83,10 @@ export const authAPI = {
   verify2FA: (data) => api.post('/auth/2fa/verify', data),
   disable2FA: (data) => api.post('/auth/2fa/disable', data),
   refreshToken: (refreshToken) => api.post('/auth/refresh-token', { refreshToken }),
+  // Password reset
+  forgotPassword: (data) => api.post('/auth/forgot-password', data),
+  resetPassword: (data) => api.post('/auth/reset-password', data),
+  verifyResetToken: (token) => api.get(`/auth/verify-reset-token/${token}`),
 }
 
 // Products API

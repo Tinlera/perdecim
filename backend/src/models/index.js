@@ -60,6 +60,16 @@ const User = sequelize.define('users', {
     type: DataTypes.TEXT,
     allowNull: true,
     field: 'refresh_token'
+  },
+  passwordResetToken: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    field: 'password_reset_token'
+  },
+  passwordResetExpires: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'password_reset_expires'
   }
 });
 
@@ -854,6 +864,7 @@ CartItem.belongsTo(ProductVariant, { foreignKey: 'variantId' });
 User.hasMany(Favorite, { foreignKey: 'userId' });
 Favorite.belongsTo(User, { foreignKey: 'userId' });
 Favorite.belongsTo(Product, { foreignKey: 'productId' });
+Product.hasMany(Favorite, { foreignKey: 'productId' });
 
 User.hasMany(Order, { foreignKey: 'userId' });
 Order.belongsTo(User, { foreignKey: 'userId' });

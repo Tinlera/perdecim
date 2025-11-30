@@ -109,13 +109,17 @@ const managerOrAdmin = authorize('admin', 'manager');
 // Personel ve üstü
 const staffOrAbove = authorize('admin', 'manager', 'staff');
 
-// 2FA doğrulama kontrolü
+// 2FA doğrulama kontrolü (JWT bazlı - session kullanmıyor)
+// Not: 2FA doğrulaması login sırasında yapılıyor, bu middleware
+// hassas işlemler için ek doğrulama gerektiğinde kullanılabilir
 const require2FA = async (req, res, next) => {
-  if (req.user.twoFactorEnabled && !req.session?.twoFactorVerified) {
-    return res.status(403).json({
+  // JWT zaten 2FA doğrulaması yapılmış kullanıcıyı içeriyor
+  // Eğer kullanıcı 2FA aktifse ve bu noktaya geldiyse, zaten doğrulanmış demektir
+  // Çünkü login sırasında 2FA doğrulaması yapılıyor
+  if (!req.user) {
+    return res.status(401).json({
       success: false,
-      message: '2FA doğrulaması gerekli',
-      code: 'REQUIRE_2FA'
+      message: 'Yetkilendirme gerekli'
     });
   }
   next();

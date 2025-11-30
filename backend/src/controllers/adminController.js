@@ -13,14 +13,21 @@ exports.getBanners = async (req, res, next) => {
     const where = {};
     
     if (active === 'true') {
+      const now = new Date();
       where.isActive = true;
-      where[Op.or] = [
-        { startDate: null },
-        { startDate: { [Op.lte]: new Date() } }
-      ];
-      where[Op.or] = [
-        { endDate: null },
-        { endDate: { [Op.gte]: new Date() } }
+      where[Op.and] = [
+        {
+          [Op.or]: [
+            { startDate: null },
+            { startDate: { [Op.lte]: now } }
+          ]
+        },
+        {
+          [Op.or]: [
+            { endDate: null },
+            { endDate: { [Op.gte]: now } }
+          ]
+        }
       ];
     }
 
