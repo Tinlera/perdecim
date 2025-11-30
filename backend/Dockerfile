@@ -22,8 +22,9 @@ RUN addgroup -g 1001 -S nodejs && \
 COPY --from=builder /app/node_modules ./node_modules
 COPY --chown=nodejs:nodejs . .
 
-# Create uploads directory
-RUN mkdir -p uploads && chown -R nodejs:nodejs uploads
+# Create uploads directories with proper permissions
+RUN mkdir -p uploads/products uploads/categories uploads/banners uploads/pages && \
+    chown -R nodejs:nodejs uploads
 
 # Switch to non-root user
 USER nodejs
