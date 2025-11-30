@@ -1,0 +1,38 @@
+name: Deploy to VDS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Manuel tetikleme için
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy to VDS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VDS_HOST }}
+          username: ${{ secrets.VDS_USERNAME }}
+          key: ${{ secrets.VDS_SSH_KEY }}
+          port: ${{ secrets.VDS_PORT }}
+          script: |
+            cd /var/www/perdecim
+            
+            echo "📥 Pulling latest changes..."
+            git fetch origin main
+            git reset --hard origin/main
+            
+            echo "🔄 Updating Docker containers..."
+            docker-compose down
+            docker-compose build --no-cache
+            docker-compose up -d
+            
+            echo "🧹 Cleaning up old images..."
+            docker image prune -f
+            
+            echo "✅ Deployment completed!"
+            docker-compose ps
+

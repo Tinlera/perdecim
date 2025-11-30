@@ -1,284 +1,359 @@
-# 🚀 VDS Deployment Rehberi
+# 🚀 Perdecim VDS Deployment Rehberi
 
-Bu rehber, Perdecim e-ticaret sitesini Ubuntu Server 24.04 üzerinde nasıl deploy edeceğinizi adım adım anlatır.
+Bu rehber, Perdecim'i Ubuntu Server 24.04 VDS'e deploy etmek ve otomatik güncelleme sistemini kurmak için hazırlanmıştır.
 
 ## 📋 Gereksinimler
 
-- Ubuntu Server 24.04 LTS
-- Minimum 2GB RAM, 2 vCPU
-- Domain adı (DNS ayarları yapılmış)
-- SSH erişimi
+- Ubuntu Server 24.04
+- Minimum 2GB RAM
+- Minimum 20GB Disk
+- Domain adı (opsiyonel ama önerilir)
 
-## 🔧 Adım 1: Sunucuya Bağlanma
+---
+
+## 🔧 İlk Kurulum
+
+### 1. Sunucuya Bağlanma
 
 ```bash
-ssh root@SUNUCU_IP_ADRESI
+ssh root@SUNUCU_IP
 ```
 
-## 📦 Adım 2: Sistem Güncellemesi
+### 2. Yeni Kullanıcı Oluşturma (Önerilir)
 
 ```bash
-apt update && apt upgrade -y
+# Yeni kullanıcı oluştur
+adduser deploy
+
+# Sudo yetkisi ver
+usermod -aG sudo deploy
+
+# Kullanıcıya geç
+su - deploy
 ```
 
-## 🐳 Adım 3: Docker Kurulumu
+### 3. Kurulum Script'ini Çalıştırma
 
 ```bash
-# Docker kurulumu
-curl -fsSL https://get.docker.com -o get-docker.sh
-sh get-docker.sh
-
-# Docker Compose kurulumu
-curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-
-# Kullanıcıyı docker grubuna ekle
-usermod -aG docker $USER
+# Script'i indir ve çalıştır
+curl -fsSL https://raw.githubusercontent.com/Tinlera/perdecim/main/scripts/setup-server.sh | bash
 ```
 
-## 🔒 Adım 4: Firewall Ayarları
+Veya manuel olarak:
 
 ```bash
-ufw default deny incoming
-ufw default allow outgoing
-ufw allow ssh
-ufw allow 80
-ufw allow 443
-ufw enable
-```
+# Gerekli paketleri yükle
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y docker.io docker-compose git
 
-## 📁 Adım 5: Proje Dosyalarını Yükleme
-
-### Seçenek A: Git ile (Önerilen)
-
-```bash
-# Proje dizini oluştur
-mkdir -p /var/www/perdecim
+# Projeyi klonla
+sudo mkdir -p /var/www/perdecim
+sudo chown -R $USER:$USER /var/www/perdecim
 cd /var/www/perdecim
-
-# Git repo'dan çek
-git clone https://github.com/YOUR_USERNAME/perdecim.git .
+git clone https://github.com/Tinlera/perdecim.git .
 ```
 
-### Seçenek B: SCP ile Manuel Yükleme
+### 4. Environment Dosyalarını Düzenleme
 
-Kendi bilgisayarınızdan:
 ```bash
-# Tüm dosyaları sunucuya kopyala
-scp -r ./* root@SUNUCU_IP:/var/www/perdecim/
+# Backend .env
+cp backend/env.example.txt backend/.env
+nano backend/.env
 ```
 
-## ⚙️ Adım 6: Environment Dosyası
-
-```bash
-cd /var/www/perdecim
-
-# .env dosyası oluştur
-cat > .env << 'EOF'
-# Server
+**Backend .env örneği:**
+```env
 NODE_ENV=production
 PORT=5000
-FRONTEND_URL=https://perdecim.com
 
 # Database
-DB_HOST=postgres
+DB_HOST=db
 DB_PORT=5432
 DB_NAME=perdecim
-DB_USER=perdecim_user
-DB_PASSWORD=GÜÇLÜ_BİR_ŞİFRE_OLUŞTURUN
-
-# JWT (openssl rand -base64 64 ile oluşturun)
-JWT_SECRET=BURAYA_UZUN_RASTGELE_STRING
-JWT_EXPIRES_IN=7d
-JWT_REFRESH_SECRET=BURAYA_BASKA_UZUN_RASTGELE_STRING
-JWT_REFRESH_EXPIRES_IN=30d
+DB_USER=perdecim
+DB_PASSWORD=GucluBirSifre123!
 
 # Redis
 REDIS_HOST=redis
 REDIS_PORT=6379
 
-# Iyzico
-IYZICO_API_KEY=your_api_key
-IYZICO_SECRET_KEY=your_secret_key
+# JWT
+JWT_SECRET=cok-uzun-ve-gizli-bir-anahtar-min-32-karakter
+JWT_REFRESH_SECRET=baska-bir-cok-uzun-gizli-anahtar-min-32
+
+# Frontend URL
+FRONTEND_URL=https://perdecim.com
+
+# İyzico (Production)
+IYZICO_API_KEY=your-production-api-key
+IYZICO_SECRET_KEY=your-production-secret-key
 IYZICO_BASE_URL=https://api.iyzipay.com
-
-# 2FA
-TWO_FA_APP_NAME=Perdecim
-
-# File Upload
-MAX_FILE_SIZE=5242880
-UPLOAD_PATH=./uploads
-EOF
 ```
-
-**Güvenli key oluşturmak için:**
-```bash
-openssl rand -base64 64
-```
-
-## 🔐 Adım 7: SSL Sertifikası (Let's Encrypt)
 
 ```bash
-# Certbot kurulumu
-apt install certbot -y
-
-# SSL sertifikası al
-certbot certonly --standalone -d perdecim.com -d www.perdecim.com --email your@email.com --agree-tos --non-interactive
-
-# Sertifikaları kopyala
-mkdir -p /var/www/perdecim/nginx/ssl
-cp /etc/letsencrypt/live/perdecim.com/fullchain.pem /var/www/perdecim/nginx/ssl/
-cp /etc/letsencrypt/live/perdecim.com/privkey.pem /var/www/perdecim/nginx/ssl/
+# Frontend .env
+cp frontend/env.example.txt frontend/.env
+nano frontend/.env
 ```
 
-## 🚀 Adım 8: Uygulamayı Başlatma
+**Frontend .env örneği:**
+```env
+VITE_API_URL=https://api.perdecim.com/api
+VITE_SITE_NAME=Perdecim
+```
+
+### 5. Docker'ı Başlatma
 
 ```bash
 cd /var/www/perdecim
-
-# Build ve başlat
-docker-compose up -d --build
-
-# Logları kontrol et
-docker-compose logs -f
+docker-compose up -d
 ```
 
-## 🌱 Adım 9: Veritabanı Seed
+### 6. Durumu Kontrol Etme
 
 ```bash
-# İlk verileri yükle (admin kullanıcısı, kategoriler, örnek ürünler)
-docker-compose exec backend npm run seed
+docker-compose ps
+docker-compose logs -f
 ```
-
-## ✅ Adım 10: Kontrol
-
-Site açılmalı: `https://perdecim.com`
-
-**Admin Girişi:**
-- Email: `admin@perdecim.com`
-- Şifre: `Admin123!`
-
-⚠️ **İLK İŞ: Admin şifresini değiştirin!**
 
 ---
 
-## 📝 Yararlı Komutlar
+## 🔄 Otomatik Güncelleme Kurulumu (GitHub Actions)
+
+GitHub'a her push yaptığınızda sunucu otomatik güncellensin istiyorsanız:
+
+### 1. SSH Key Oluşturma (Sunucuda)
 
 ```bash
-# Logları izle
+# Deploy kullanıcısı olarak
+ssh-keygen -t ed25519 -C "github-deploy" -f ~/.ssh/github_deploy -N ""
+
+# Public key'i authorized_keys'e ekle
+cat ~/.ssh/github_deploy.pub >> ~/.ssh/authorized_keys
+
+# Private key'i görüntüle (bunu kopyalayacaksınız)
+cat ~/.ssh/github_deploy
+```
+
+### 2. GitHub Secrets Ekleme
+
+GitHub repo'nuzda: **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+
+Aşağıdaki secret'ları ekleyin:
+
+| Secret Name | Değer |
+|-------------|-------|
+| `VDS_HOST` | Sunucu IP adresi (örn: `185.123.45.67`) |
+| `VDS_USERNAME` | SSH kullanıcı adı (örn: `deploy`) |
+| `VDS_SSH_KEY` | SSH private key (yukarıda oluşturduğunuz) |
+| `VDS_PORT` | SSH port (genellikle `22`) |
+
+### 3. Test Etme
+
+Herhangi bir değişiklik yapıp push edin:
+
+```bash
+git add .
+git commit -m "test: deployment test"
+git push origin main
+```
+
+GitHub Actions sekmesinden deployment'ı takip edebilirsiniz.
+
+---
+
+## 🌐 Domain ve SSL Kurulumu
+
+### 1. Domain DNS Ayarları
+
+Domain sağlayıcınızda A kaydı ekleyin:
+- `@` → Sunucu IP'si
+- `www` → Sunucu IP'si
+- `api` → Sunucu IP'si (API için subdomain kullanıyorsanız)
+
+### 2. Nginx Reverse Proxy (Opsiyonel)
+
+Sunucuda direkt Nginx kullanmak isterseniz:
+
+```bash
+sudo apt install nginx certbot python3-certbot-nginx
+
+# Nginx config
+sudo nano /etc/nginx/sites-available/perdecim
+```
+
+```nginx
+server {
+    listen 80;
+    server_name perdecim.com www.perdecim.com;
+
+    location / {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+
+server {
+    listen 80;
+    server_name api.perdecim.com;
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+}
+```
+
+```bash
+# Etkinleştir
+sudo ln -s /etc/nginx/sites-available/perdecim /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+
+# SSL sertifikası al
+sudo certbot --nginx -d perdecim.com -d www.perdecim.com -d api.perdecim.com
+```
+
+---
+
+## 🛠️ Faydalı Komutlar
+
+### Docker Komutları
+
+```bash
+# Container'ları görüntüle
+docker-compose ps
+
+# Logları görüntüle
 docker-compose logs -f
-
-# Sadece backend logları
 docker-compose logs -f backend
+docker-compose logs -f frontend
 
-# Yeniden başlat
+# Container'ları yeniden başlat
 docker-compose restart
 
-# Durdur
+# Container'ları durdur
 docker-compose down
 
-# Tamamen sil ve yeniden başlat
-docker-compose down -v
+# Container'ları başlat (build ile)
 docker-compose up -d --build
+
+# Tüm container'ları temizle
+docker-compose down -v --rmi all
+```
+
+### Manuel Güncelleme
+
+```bash
+cd /var/www/perdecim
+./scripts/update.sh
+```
+
+Veya:
+
+```bash
+cd /var/www/perdecim
+git pull origin main
+docker-compose down
+docker-compose up -d --build
+```
+
+### Database Yedekleme
+
+```bash
+# Yedek al
+docker-compose exec db pg_dump -U perdecim perdecim > backup_$(date +%Y%m%d).sql
+
+# Yedekten geri yükle
+docker-compose exec -T db psql -U perdecim perdecim < backup_20240101.sql
+```
+
+---
+
+## 🔍 Sorun Giderme
+
+### Container başlamıyor
+
+```bash
+# Logları kontrol et
+docker-compose logs backend
+docker-compose logs frontend
 
 # Container'a bağlan
 docker-compose exec backend sh
-docker-compose exec postgres psql -U perdecim_user -d perdecim
 ```
 
-## 🔄 SSL Otomatik Yenileme
+### Port çakışması
 
 ```bash
-# Crontab'a ekle
-crontab -e
+# Portları kontrol et
+sudo netstat -tlnp | grep -E ':(80|443|3000|5000)'
 
-# Şu satırı ekle (her gün saat 3'te kontrol):
-0 3 * * * certbot renew --quiet && cp /etc/letsencrypt/live/perdecim.com/*.pem /var/www/perdecim/nginx/ssl/ && docker-compose -f /var/www/perdecim/docker-compose.yml restart frontend
+# Çakışan servisi durdur
+sudo systemctl stop nginx
 ```
 
-## 🔧 Sorun Giderme
+### Disk doldu
 
-### Container başlamıyor
-```bash
-docker-compose logs backend
-docker-compose logs postgres
-```
-
-### Veritabanı bağlantı hatası
-```bash
-# Postgres container'ının çalıştığından emin ol
-docker-compose ps
-
-# Postgres'e bağlan
-docker-compose exec postgres psql -U perdecim_user -d perdecim
-```
-
-### Port kullanımda hatası
-```bash
-# 80 ve 443 portlarını kullanan servisleri bul
-lsof -i :80
-lsof -i :443
-
-# Nginx'i durdur (eğer sistem nginx'i çalışıyorsa)
-systemctl stop nginx
-systemctl disable nginx
-```
-
-### Disk dolu
 ```bash
 # Docker temizliği
-docker system prune -a
+docker system prune -a -f
+
+# Log dosyalarını temizle
+sudo truncate -s 0 /var/lib/docker/containers/*/*-json.log
 ```
 
-## 📊 Monitoring (Opsiyonel)
+### GitHub Actions başarısız
 
-### Basit Monitoring
+1. Secrets'ların doğru girildiğinden emin olun
+2. SSH key'in authorized_keys'e eklendiğini kontrol edin
+3. Sunucu firewall'ında SSH port'unun açık olduğunu kontrol edin
+
 ```bash
-# Container durumları
+# SSH bağlantısını test et
+ssh -i ~/.ssh/github_deploy deploy@SUNUCU_IP
+```
+
+---
+
+## 📊 İzleme ve Bakım
+
+### Sistem Kaynaklarını İzleme
+
+```bash
+# Anlık durum
+htop
+
+# Docker stats
 docker stats
 
 # Disk kullanımı
 df -h
-
-# Memory kullanımı
-free -m
 ```
 
-### Gelişmiş Monitoring (Opsiyonel)
-Portainer, Grafana veya Netdata kurabilirsiniz.
-
----
-
-## 🔒 Güvenlik Kontrol Listesi
-
-- [ ] Admin şifresi değiştirildi
-- [ ] .env dosyasındaki tüm secret'lar güncellendi
-- [ ] Iyzico API key'leri production key'leri ile değiştirildi
-- [ ] 2FA aktifleştirildi
-- [ ] Firewall aktif
-- [ ] SSL sertifikası çalışıyor
-- [ ] Otomatik SSL yenileme ayarlandı
-- [ ] Backup stratejisi belirlendi
-
-## 💾 Backup
+### Otomatik Yedekleme (Cron)
 
 ```bash
-# Veritabanı backup
-docker-compose exec postgres pg_dump -U perdecim_user perdecim > backup_$(date +%Y%m%d).sql
+# Crontab düzenle
+crontab -e
 
-# Uploads backup
-tar -czvf uploads_backup_$(date +%Y%m%d).tar.gz backend/uploads/
+# Her gün saat 03:00'te yedek al
+0 3 * * * cd /var/www/perdecim && docker-compose exec -T db pg_dump -U perdecim perdecim > /var/backups/perdecim_$(date +\%Y\%m\%d).sql
 
-# Otomatik backup için crontab
-0 2 * * * docker-compose -f /var/www/perdecim/docker-compose.yml exec -T postgres pg_dump -U perdecim_user perdecim > /var/backups/perdecim_$(date +\%Y\%m\%d).sql
+# 7 günden eski yedekleri sil
+0 4 * * * find /var/backups -name "perdecim_*.sql" -mtime +7 -delete
 ```
 
 ---
 
 ## 📞 Destek
 
-Sorun yaşarsanız:
-1. Docker loglarını kontrol edin
-2. .env dosyasını kontrol edin
-3. Firewall ayarlarını kontrol edin
-4. DNS ayarlarını kontrol edin
+Sorun yaşarsanız GitHub Issues üzerinden bildirebilirsiniz.
