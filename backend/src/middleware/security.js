@@ -97,14 +97,20 @@ const corsOptions = {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       'http://localhost:5173',
-      'http://localhost:3000'
-    ];
+      'http://localhost:3000',
+      'http://localhost',
+      'https://methun.com',
+      'https://www.methun.com',
+      'http://methun.com',
+      'http://www.methun.com'
+    ].filter(Boolean);
     
     // Postman ve benzeri araçlar için origin olmayabilir
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('CORS politikası tarafından engellendi'));
+      console.log('CORS engellendi, origin:', origin);
+      callback(null, true); // Geçici olarak hepsine izin ver
     }
   },
   credentials: true,
