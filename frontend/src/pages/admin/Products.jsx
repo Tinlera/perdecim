@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -12,6 +12,8 @@ import {
   Image as ImageIcon,
   ChevronLeft,
   ChevronRight,
+  Upload,
+  Star,
 } from 'lucide-react'
 import { productsAPI, categoriesAPI } from '../../services/api'
 import { formatPrice } from '../../lib/utils'
@@ -41,12 +43,17 @@ export default function AdminProducts() {
   const [searchQuery, setSearchQuery] = useState('')
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1 })
   const [isSaving, setIsSaving] = useState(false)
+  
+  // Image states
+  const [productImages, setProductImages] = useState([])
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const [previewImages, setPreviewImages] = useState([])
+  const fileInputRef = useRef(null)
 
   const {
     register,
     handleSubmit,
     reset,
-    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(productSchema),
@@ -93,6 +100,7 @@ export default function AdminProducts() {
   const openModal = (product = null) => {
     if (product) {
       setEditingProduct(product)
+      setProductImages(product.images || [])
       reset({
         name: product.name,
         description: product.description || '',
@@ -109,6 +117,8 @@ export default function AdminProducts() {
       })
     } else {
       setEditingProduct(null)
+      setProductImages([])
+      setPreviewImages([])
       reset({
         name: '',
         description: '',
@@ -130,7 +140,84 @@ export default function AdminProducts() {
   const closeModal = () => {
     setIsModalOpen(false)
     setEditingProduct(null)
+    setProductImages([])
+    setPreviewImages([])
     reset()
+  }
+
+  // Handle image selection
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files)
+    if (files.length === 0) return
+
+    // Create previews
+    const newPreviews = files.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      name: file.name
+    }))
+
+    setPreviewImages(prev => [...prev, ...newPreviews])
+  }
+
+  // Remove preview image
+  const removePreviewImage = (index) => {
+    setPreviewImages(prev => {
+      const newPreviews = [...prev]
+      URL.revokeObjectURL(newPreviews[index].preview)
+      newPreviews.splice(index, 1)
+      return newPreviews
+    })
+  }
+
+  // Remove existing image
+  const removeExistingImage = async (imageId) => {
+    if (!editingProduct) return
+    
+    try {
+      await productsAPI.deleteImage(editingProduct.id, imageId)
+      setProductImages(prev => prev.filter(img => img.id !== imageId))
+      toast.success('Resim silindi')
+    } catch (error) {
+      toast.error('Resim silinemedi')
+    }
+  }
+
+  // Set featured image
+  const setFeaturedImage = async (imageId) => {
+    if (!editingProduct) return
+    
+    try {
+      await productsAPI.setFeaturedImage(editingProduct.id, imageId)
+      setProductImages(prev => prev.map(img => ({
+        ...img,
+        isFeatured: img.id === imageId
+      })))
+      toast.success('Ana resim ayarlandı')
+    } catch (error) {
+      toast.error('Ana resim ayarlanamadı')
+    }
+  }
+
+  // Upload images
+  const uploadImages = async (productId) => {
+    if (previewImages.length === 0) return
+
+    setUploadingImages(true)
+    try {
+      for (const preview of previewImages) {
+        const formData = new FormData()
+        formData.append('image', preview.file)
+        await productsAPI.uploadImage(productId, formData)
+      }
+      setPreviewImages([])
+      toast.success('Resimler yüklendi')
+    } catch (error) {
+      console.error('Resim yükleme hatası:', error)
+      toast.error('Bazı resimler yüklenemedi')
+    } finally {
+      setUploadingImages(false)
+    }
   }
 
   const onSubmit = async (data) => {
@@ -144,12 +231,20 @@ export default function AdminProducts() {
         categoryId: data.categoryId || null,
       }
 
+      let productId = editingProduct?.id
+
       if (editingProduct) {
         await productsAPI.update(editingProduct.id, productData)
         toast.success('Ürün güncellendi')
       } else {
-        await productsAPI.create(productData)
+        const response = await productsAPI.create(productData)
+        productId = response.data.data.id
         toast.success('Ürün oluşturuldu')
+      }
+
+      // Upload new images
+      if (previewImages.length > 0 && productId) {
+        await uploadImages(productId)
       }
 
       closeModal()
@@ -317,8 +412,8 @@ export default function AdminProducts() {
       {/* Product Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b">
+          <div className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white z-10">
               <h2 className="text-xl font-bold text-charcoal-700">
                 {editingProduct ? 'Ürün Düzenle' : 'Yeni Ürün'}
               </h2>
@@ -328,6 +423,96 @@ export default function AdminProducts() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
+              {/* Image Upload Section */}
+              <div className="space-y-4">
+                <label className="label">Ürün Görselleri</label>
+                
+                {/* Existing Images */}
+                {productImages.length > 0 && (
+                  <div className="grid grid-cols-4 gap-4 mb-4">
+                    {productImages.map((image) => (
+                      <div key={image.id} className="relative group">
+                        <div className="aspect-square rounded-lg overflow-hidden bg-charcoal-100">
+                          <img
+                            src={image.url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setFeaturedImage(image.id)}
+                            className={`p-2 rounded-full ${image.isFeatured ? 'bg-gold-400 text-white' : 'bg-white text-charcoal-600 hover:bg-gold-100'}`}
+                            title="Ana resim yap"
+                          >
+                            <Star className="w-4 h-4" fill={image.isFeatured ? 'currentColor' : 'none'} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeExistingImage(image.id)}
+                            className="p-2 bg-white text-red-500 rounded-full hover:bg-red-50"
+                            title="Sil"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        {image.isFeatured && (
+                          <span className="absolute top-2 left-2 bg-gold-400 text-white text-xs px-2 py-0.5 rounded">
+                            Ana
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Preview Images */}
+                {previewImages.length > 0 && (
+                  <div className="grid grid-cols-4 gap-4 mb-4">
+                    {previewImages.map((preview, index) => (
+                      <div key={index} className="relative group">
+                        <div className="aspect-square rounded-lg overflow-hidden bg-charcoal-100 border-2 border-dashed border-gold-400">
+                          <img
+                            src={preview.preview}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removePreviewImage(index)}
+                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                        <span className="absolute bottom-2 left-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded truncate">
+                          Yeni
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Upload Button */}
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="border-2 border-dashed border-charcoal-300 rounded-xl p-8 text-center cursor-pointer hover:border-gold-400 hover:bg-gold-50/50 transition-colors"
+                >
+                  <Upload className="w-10 h-10 text-charcoal-400 mx-auto mb-3" />
+                  <p className="text-charcoal-600 font-medium">Resim Yükle</p>
+                  <p className="text-sm text-charcoal-400 mt-1">PNG, JPG, WEBP - Max 5MB</p>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageSelect}
+                  className="hidden"
+                />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Name */}
                 <div className="md:col-span-2">
@@ -412,8 +597,15 @@ export default function AdminProducts() {
                 <button type="button" onClick={closeModal} className="btn-ghost">
                   İptal
                 </button>
-                <button type="submit" disabled={isSaving} className="btn-primary">
-                  {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingProduct ? 'Güncelle' : 'Oluştur')}
+                <button type="submit" disabled={isSaving || uploadingImages} className="btn-primary">
+                  {(isSaving || uploadingImages) ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      {uploadingImages ? 'Resimler Yükleniyor...' : 'Kaydediliyor...'}
+                    </>
+                  ) : (
+                    editingProduct ? 'Güncelle' : 'Oluştur'
+                  )}
                 </button>
               </div>
             </form>
@@ -423,4 +615,3 @@ export default function AdminProducts() {
     </div>
   )
 }
-

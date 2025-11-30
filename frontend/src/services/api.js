@@ -98,7 +98,13 @@ export const productsAPI = {
   create: (data) => api.post('/products', data),
   update: (id, data) => api.put(`/products/${id}`, data),
   delete: (id) => api.delete(`/products/${id}`),
-  deleteImage: (id, imageIndex) => api.delete(`/products/${id}/images/${imageIndex}`),
+  // Images
+  uploadImage: (id, formData) => api.post(`/products/${id}/images`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deleteImage: (id, imageId) => api.delete(`/products/${id}/images/${imageId}`),
+  setFeaturedImage: (id, imageId) => api.put(`/products/${id}/images/${imageId}/featured`),
+  // Variants
   addVariant: (id, data) => api.post(`/products/${id}/variants`, data),
   updateVariant: (id, variantId, data) => api.put(`/products/${id}/variants/${variantId}`, data),
   deleteVariant: (id, variantId) => api.delete(`/products/${id}/variants/${variantId}`),

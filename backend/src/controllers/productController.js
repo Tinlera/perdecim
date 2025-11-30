@@ -368,10 +368,10 @@ exports.deleteProduct = async (req, res, next) => {
   }
 };
 
-// Ürün resmi silme (Admin)
-exports.deleteProductImage = async (req, res, next) => {
+// Ürün resmi yükleme (Admin)
+exports.uploadProductImage = async (req, res, next) => {
   try {
-    const { id, imageIndex } = req.params;
+    const { id } = req.params;
 
     const product = await Product.findByPk(id);
     if (!product) {
@@ -381,29 +381,175 @@ exports.deleteProductImage = async (req, res, next) => {
       });
     }
 
-    const images = [...(product.images || [])];
-    const index = parseInt(imageIndex);
-
-    if (index < 0 || index >= images.length) {
+    if (!req.files || !req.files.image) {
       return res.status(400).json({
         success: false,
-        message: 'Geçersiz resim index'
+        message: 'Resim dosyası gerekli'
       });
     }
 
-    // Resmi sil
-    deleteImage(images[index]);
-    images.splice(index, 1);
+    // Resmi işle
+    const imageUrl = await processImage(req.files.image[0], 'products', {
+      width: 800,
+      height: 800
+    });
 
-    await product.update({ images });
+    // Mevcut resimlere ekle
+    const images = product.images || [];
+    const newImage = {
+      id: require('crypto').randomUUID(),
+      url: imageUrl,
+      isFeatured: images.length === 0 // İlk resimse featured yap
+    };
+    images.push(newImage);
+
+    // Eğer ilk resimse featuredImage olarak da ayarla
+    const updateData = { images };
+    if (!product.featuredImage) {
+      updateData.featuredImage = imageUrl;
+    }
+
+    await product.update(updateData);
 
     // Cache temizle
     await cacheDel(`product:${product.slug}`);
+    await cacheFlush('products:*');
+
+    res.status(201).json({
+      success: true,
+      message: 'Resim yüklendi',
+      data: newImage
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Ürün resmi silme (Admin)
+exports.deleteProductImage = async (req, res, next) => {
+  try {
+    const { id, imageId } = req.params;
+
+    const product = await Product.findByPk(id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ürün bulunamadı'
+      });
+    }
+
+    let images = product.images || [];
+    
+    // imageId string olabilir (UUID) veya index olabilir
+    let imageToDelete = null;
+    let newImages = [];
+
+    // UUID formatında mı kontrol et
+    if (imageId.includes('-')) {
+      // UUID - obje array'ı varsay
+      imageToDelete = images.find(img => img.id === imageId);
+      newImages = images.filter(img => img.id !== imageId);
+    } else {
+      // Index - eski string array formatı
+      const index = parseInt(imageId);
+      if (index >= 0 && index < images.length) {
+        imageToDelete = images[index];
+        newImages = images.filter((_, i) => i !== index);
+      }
+    }
+
+    if (!imageToDelete) {
+      return res.status(400).json({
+        success: false,
+        message: 'Resim bulunamadı'
+      });
+    }
+
+    // Dosyayı sil
+    const imageUrl = typeof imageToDelete === 'string' ? imageToDelete : imageToDelete.url;
+    deleteImage(imageUrl);
+
+    // Eğer silinen resim featuredImage ise, ilk resmi featured yap
+    let featuredImage = product.featuredImage;
+    if (featuredImage === imageUrl && newImages.length > 0) {
+      const firstImage = typeof newImages[0] === 'string' ? newImages[0] : newImages[0].url;
+      featuredImage = firstImage;
+      if (typeof newImages[0] === 'object') {
+        newImages[0].isFeatured = true;
+      }
+    } else if (newImages.length === 0) {
+      featuredImage = null;
+    }
+
+    await product.update({ images: newImages, featuredImage });
+
+    // Cache temizle
+    await cacheDel(`product:${product.slug}`);
+    await cacheFlush('products:*');
 
     res.json({
       success: true,
       message: 'Resim silindi',
-      data: { images }
+      data: { images: newImages }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Ana resim ayarlama (Admin)
+exports.setFeaturedImage = async (req, res, next) => {
+  try {
+    const { id, imageId } = req.params;
+
+    const product = await Product.findByPk(id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Ürün bulunamadı'
+      });
+    }
+
+    let images = product.images || [];
+    let featuredImage = null;
+
+    // imageId'ye göre resmi bul
+    const newImages = images.map(img => {
+      if (typeof img === 'object') {
+        const isFeatured = img.id === imageId;
+        if (isFeatured) featuredImage = img.url;
+        return { ...img, isFeatured };
+      } else {
+        // Eski string array formatı - index kullan
+        return img;
+      }
+    });
+
+    // Eğer string array ise
+    if (typeof images[0] === 'string') {
+      const index = parseInt(imageId);
+      if (index >= 0 && index < images.length) {
+        featuredImage = images[index];
+      }
+    }
+
+    if (!featuredImage) {
+      return res.status(400).json({
+        success: false,
+        message: 'Resim bulunamadı'
+      });
+    }
+
+    await product.update({ images: newImages, featuredImage });
+
+    // Cache temizle
+    await cacheDel(`product:${product.slug}`);
+    await cacheFlush('products:*');
+
+    res.json({
+      success: true,
+      message: 'Ana resim ayarlandı',
+      data: { featuredImage, images: newImages }
     });
   } catch (error) {
     next(error);

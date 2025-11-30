@@ -30,7 +30,14 @@ router.put('/:id',
 );
 
 router.delete('/:id', productController.deleteProduct);
-router.delete('/:id/images/:imageIndex', productController.deleteProductImage);
+
+// Image routes
+router.post('/:id/images', 
+  uploadFields([{ name: 'image', maxCount: 1 }]),
+  productController.uploadProductImage
+);
+router.delete('/:id/images/:imageId', productController.deleteProductImage);
+router.put('/:id/images/:imageId/featured', productController.setFeaturedImage);
 
 // Variant routes
 router.post('/:id/variants', productController.addVariant);
