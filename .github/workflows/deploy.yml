@@ -18,6 +18,7 @@ jobs:
           username: ${{ secrets.VDS_USERNAME }}
           key: ${{ secrets.VDS_SSH_KEY }}
           port: ${{ secrets.VDS_PORT }}
+          debug: true
           script: |
             cd /var/www/perdecim
             
