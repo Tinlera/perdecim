@@ -70,6 +70,21 @@ const User = sequelize.define('users', {
     type: DataTypes.DATE,
     allowNull: true,
     field: 'password_reset_expires'
+  },
+  googleId: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    unique: true,
+    field: 'google_id'
+  },
+  avatar: {
+    type: DataTypes.STRING(500),
+    allowNull: true
+  },
+  canChangePassword: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true,
+    field: 'can_change_password'
   }
 });
 
@@ -223,6 +238,26 @@ const Product = sequelize.define('products', {
   attributes: {
     type: DataTypes.JSONB,
     defaultValue: {}
+  },
+  isRemovedFromSale: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'is_removed_from_sale'
+  },
+  removedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'removed_at'
+  },
+  removedBy: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'removed_by'
+  },
+  removalReason: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'removal_reason'
   }
 });
 
@@ -715,6 +750,149 @@ const Setting = sequelize.define('settings', {
   }
 });
 
+// Pending Approval Model (Fiyat değişikliği, ürün güncelleme vb.)
+const PendingApproval = sequelize.define('pending_approvals', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  type: {
+    type: DataTypes.ENUM('price_change', 'product_update', 'product_visibility', 'stock_change'),
+    allowNull: false
+  },
+  entityType: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
+    field: 'entity_type'
+  },
+  entityId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: 'entity_id'
+  },
+  oldValue: {
+    type: DataTypes.JSONB,
+    allowNull: true,
+    field: 'old_value'
+  },
+  newValue: {
+    type: DataTypes.JSONB,
+    allowNull: false,
+    field: 'new_value'
+  },
+  requestedBy: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: 'requested_by'
+  },
+  status: {
+    type: DataTypes.ENUM('pending', 'approved', 'rejected'),
+    defaultValue: 'pending'
+  },
+  approvedBy: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'approved_by'
+  },
+  approvedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'approved_at'
+  },
+  rejectionReason: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'rejection_reason'
+  },
+  notes: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  }
+});
+
+// Activity Log Model
+const ActivityLog = sequelize.define('activity_logs', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'user_id'
+  },
+  action: {
+    type: DataTypes.STRING(100),
+    allowNull: false
+  },
+  entityType: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+    field: 'entity_type'
+  },
+  entityId: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    field: 'entity_id'
+  },
+  details: {
+    type: DataTypes.JSONB,
+    defaultValue: {}
+  },
+  ipAddress: {
+    type: DataTypes.STRING(45),
+    allowNull: true,
+    field: 'ip_address'
+  },
+  userAgent: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    field: 'user_agent'
+  }
+});
+
+// Notification Model
+const Notification = sequelize.define('notifications', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  userId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    field: 'user_id'
+  },
+  type: {
+    type: DataTypes.STRING(50),
+    allowNull: false
+  },
+  title: {
+    type: DataTypes.STRING(255),
+    allowNull: false
+  },
+  message: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  data: {
+    type: DataTypes.JSONB,
+    defaultValue: {}
+  },
+  isRead: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    field: 'is_read'
+  },
+  readAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    field: 'read_at'
+  }
+});
+
 // Stock Log Model (Stok hareketleri)
 const StockLog = sequelize.define('stock_logs', {
   id: {
@@ -885,6 +1063,17 @@ Order.hasMany(SalesLog, { foreignKey: 'orderId' });
 SalesLog.belongsTo(Order, { foreignKey: 'orderId' });
 SalesLog.belongsTo(User, { as: 'staff', foreignKey: 'staffId' });
 
+// PendingApproval associations
+PendingApproval.belongsTo(User, { as: 'requester', foreignKey: 'requestedBy' });
+PendingApproval.belongsTo(User, { as: 'approver', foreignKey: 'approvedBy' });
+
+// ActivityLog associations
+ActivityLog.belongsTo(User, { foreignKey: 'userId' });
+
+// Notification associations
+User.hasMany(Notification, { foreignKey: 'userId' });
+Notification.belongsTo(User, { foreignKey: 'userId' });
+
 module.exports = {
   sequelize,
   User,
@@ -903,5 +1092,8 @@ module.exports = {
   Setting,
   StockLog,
   SalesLog,
-  RolePermission
+  RolePermission,
+  PendingApproval,
+  ActivityLog,
+  Notification
 };

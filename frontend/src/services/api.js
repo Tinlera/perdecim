@@ -87,6 +87,8 @@ export const authAPI = {
   forgotPassword: (data) => api.post('/auth/forgot-password', data),
   resetPassword: (data) => api.post('/auth/reset-password', data),
   verifyResetToken: (token) => api.get(`/auth/verify-reset-token/${token}`),
+  // Google OAuth
+  googleAuth: (data) => api.post('/auth/google', data),
 }
 
 // Products API
@@ -203,6 +205,22 @@ export const adminAPI = {
   approveStockLog: (id, status) => api.put(`/admin/stock-logs/${id}/approve`, { status }),
   // Sales logs
   getSalesLogs: (params) => api.get('/admin/sales-logs', { params }),
+  // Pending Approvals
+  getPendingApprovals: (params) => api.get('/admin/pending-approvals', { params }),
+  approveRequest: (id) => api.put(`/admin/pending-approvals/${id}/approve`),
+  rejectRequest: (id, reason) => api.put(`/admin/pending-approvals/${id}/reject`, { reason }),
+  // Product price change request
+  requestPriceChange: (data) => api.post('/admin/products/request-price-change', data),
+  // Product visibility
+  removeFromSale: (data) => api.post('/admin/products/remove-from-sale', data),
+  returnToSale: (data) => api.post('/admin/products/return-to-sale', data),
+  getRemovedProducts: (params) => api.get('/admin/products/removed', { params }),
+  // Notifications
+  getNotifications: (params) => api.get('/admin/notifications', { params }),
+  markNotificationRead: (id) => api.put(`/admin/notifications/${id}/read`),
+  markAllNotificationsRead: () => api.put('/admin/notifications/read-all'),
+  // Activity logs
+  getActivityLogs: (params) => api.get('/admin/activity-logs', { params }),
 }
 
 export default api

@@ -3,8 +3,9 @@ const jwt = require('jsonwebtoken');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
-const { User } = require('../models');
+const { User, Setting } = require('../models');
 const { Op } = require('sequelize');
+const emailService = require('../services/emailService');
 
 // Token oluşturma
 const generateTokens = (userId) => {
@@ -55,6 +56,23 @@ exports.register = async (req, res, next) => {
 
     // Refresh token kaydet
     await user.update({ refreshToken });
+
+    // Hoşgeldiniz emaili gönder
+    try {
+      const emailEnabled = await Setting.findOne({ where: { key: 'email_welcome_enabled' } });
+      if (emailEnabled?.value === 'true') {
+        await emailService.sendWelcomeEmail(user);
+      }
+
+      // Admin'e yeni üye bildirimi
+      const adminNotifyEnabled = await Setting.findOne({ where: { key: 'email_new_user_notify' } });
+      const adminEmail = await Setting.findOne({ where: { key: 'admin_notification_email' } });
+      if (adminNotifyEnabled?.value === 'true' && adminEmail?.value) {
+        await emailService.sendNewUserNotification(user, adminEmail.value);
+      }
+    } catch (emailError) {
+      console.error('[Auth] Email gönderme hatası:', emailError.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -431,6 +449,14 @@ exports.changePassword = async (req, res, next) => {
     const { currentPassword, newPassword } = req.body;
     const user = await User.findByPk(req.user.id);
 
+    // Admin şifre değişikliği kısıtlaması
+    if (user.role === 'admin' || user.canChangePassword === false) {
+      return res.status(403).json({
+        success: false,
+        message: 'Yönetici şifresi web üzerinden değiştirilemez. Lütfen sistem yöneticisi ile iletişime geçin.'
+      });
+    }
+
     // Mevcut şifre kontrolü
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
@@ -447,6 +473,95 @@ exports.changePassword = async (req, res, next) => {
     res.json({
       success: true,
       message: 'Şifre başarıyla değiştirildi'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Google OAuth ile giriş/kayıt
+exports.googleAuth = async (req, res, next) => {
+  try {
+    const { googleId, email, firstName, lastName, avatar } = req.body;
+
+    if (!googleId || !email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Google ID ve email gerekli'
+      });
+    }
+
+    // Önce Google ID ile ara
+    let user = await User.findOne({ where: { googleId } });
+
+    if (!user) {
+      // Email ile ara
+      user = await User.findOne({ where: { email } });
+
+      if (user) {
+        // Mevcut hesabı Google ile bağla
+        await user.update({ googleId, avatar: avatar || user.avatar });
+      } else {
+        // Yeni kullanıcı oluştur
+        user = await User.create({
+          googleId,
+          email,
+          firstName,
+          lastName,
+          avatar,
+          password: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12), // Random password
+          role: 'customer',
+          canChangePassword: true
+        });
+
+        // Hoşgeldiniz emaili gönder
+        try {
+          const emailEnabled = await Setting.findOne({ where: { key: 'email_welcome_enabled' } });
+          if (emailEnabled?.value === 'true') {
+            await emailService.sendWelcomeEmail(user);
+          }
+        } catch (emailError) {
+          console.error('[Auth] Email gönderme hatası:', emailError.message);
+        }
+      }
+    }
+
+    // Hesap aktif mi?
+    if (!user.isActive) {
+      return res.status(401).json({
+        success: false,
+        message: 'Hesabınız devre dışı bırakılmış'
+      });
+    }
+
+    // Token oluştur
+    const { accessToken, refreshToken } = generateTokens(user.id);
+
+    // Refresh token ve son giriş güncelle
+    await user.update({
+      refreshToken,
+      lastLogin: new Date()
+    });
+
+    const redirectPath = getRedirectPath(user.role);
+
+    res.json({
+      success: true,
+      message: 'Google ile giriş başarılı',
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+          avatar: user.avatar,
+          twoFactorEnabled: user.twoFactorEnabled
+        },
+        accessToken,
+        refreshToken,
+        redirectPath
+      }
     });
   } catch (error) {
     next(error);

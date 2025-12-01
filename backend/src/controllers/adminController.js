@@ -1,8 +1,9 @@
-const { Banner, Page, Setting, Coupon, StockLog, SalesLog, User, Order, Product, sequelize } = require('../models');
+const { Banner, Page, Setting, Coupon, StockLog, SalesLog, User, Order, Product, PendingApproval, ActivityLog, Notification, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const slugify = require('slugify');
 const { processImage, deleteImage } = require('../middleware/upload');
 const { cacheFlush } = require('../config/redis');
+const emailService = require('../services/emailService');
 
 // ==================== BANNER/SLIDER ====================
 
@@ -762,6 +763,11 @@ exports.getDashboardStats = async (req, res, next) => {
       where: { status: 'pending' }
     });
 
+    // Onay bekleyen işlemler
+    const pendingApprovals = await PendingApproval.count({
+      where: { status: 'pending' }
+    });
+
     res.json({
       success: true,
       data: {
@@ -772,7 +778,440 @@ exports.getDashboardStats = async (req, res, next) => {
         totalUsers,
         totalProducts,
         lowStockProducts,
-        pendingOrders
+        pendingOrders,
+        pendingApprovals
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==================== PENDING APPROVALS ====================
+
+// Onay bekleyen işlemleri listele
+exports.getPendingApprovals = async (req, res, next) => {
+  try {
+    const { status = 'pending', type, page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
+
+    const where = {};
+    if (status) where.status = status;
+    if (type) where.type = type;
+
+    const { count, rows } = await PendingApproval.findAndCountAll({
+      where,
+      include: [
+        { model: User, as: 'requester', attributes: ['id', 'firstName', 'lastName', 'email', 'role'] },
+        { model: User, as: 'approver', attributes: ['id', 'firstName', 'lastName', 'email', 'role'] }
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: parseInt(limit),
+      offset
+    });
+
+    // İlgili entity bilgilerini getir
+    for (const approval of rows) {
+      if (approval.entityType === 'product') {
+        approval.dataValues.entity = await Product.findByPk(approval.entityId, {
+          attributes: ['id', 'name', 'slug', 'price', 'featuredImage']
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(count / limit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Onay ver
+exports.approveRequest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const approval = await PendingApproval.findByPk(id, {
+      include: [{ model: User, as: 'requester' }]
+    });
+
+    if (!approval) {
+      return res.status(404).json({ success: false, message: 'Onay talebi bulunamadı' });
+    }
+
+    if (approval.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Bu talep zaten işlenmiş' });
+    }
+
+    // Yetki kontrolü - sadece manager ve admin onaylayabilir
+    if (!['manager', 'admin'].includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Bu işlem için yetkiniz yok' });
+    }
+
+    // İşlemi uygula
+    if (approval.type === 'price_change' && approval.entityType === 'product') {
+      await Product.update(
+        { price: approval.newValue.price, comparePrice: approval.newValue.comparePrice },
+        { where: { id: approval.entityId } }
+      );
+    } else if (approval.type === 'product_visibility' && approval.entityType === 'product') {
+      await Product.update(
+        { 
+          isRemovedFromSale: approval.newValue.isRemovedFromSale,
+          removedAt: approval.newValue.isRemovedFromSale ? new Date() : null,
+          removedBy: approval.newValue.isRemovedFromSale ? req.user.id : null,
+          removalReason: approval.newValue.removalReason || null
+        },
+        { where: { id: approval.entityId } }
+      );
+    }
+
+    // Onayı güncelle
+    await approval.update({
+      status: 'approved',
+      approvedBy: req.user.id,
+      approvedAt: new Date()
+    });
+
+    // Talep edene bildirim gönder
+    await Notification.create({
+      userId: approval.requestedBy,
+      type: 'approval_approved',
+      title: 'Talebiniz Onaylandı',
+      message: `${approval.type} talebiniz onaylandı.`,
+      data: { approvalId: approval.id }
+    });
+
+    await cacheFlush('products:*');
+
+    res.json({ success: true, message: 'Talep onaylandı' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Reddet
+exports.rejectRequest = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const approval = await PendingApproval.findByPk(id);
+
+    if (!approval) {
+      return res.status(404).json({ success: false, message: 'Onay talebi bulunamadı' });
+    }
+
+    if (approval.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Bu talep zaten işlenmiş' });
+    }
+
+    // Yetki kontrolü
+    if (!['manager', 'admin'].includes(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Bu işlem için yetkiniz yok' });
+    }
+
+    await approval.update({
+      status: 'rejected',
+      approvedBy: req.user.id,
+      approvedAt: new Date(),
+      rejectionReason: reason
+    });
+
+    // Talep edene bildirim gönder
+    await Notification.create({
+      userId: approval.requestedBy,
+      type: 'approval_rejected',
+      title: 'Talebiniz Reddedildi',
+      message: `${approval.type} talebiniz reddedildi. Sebep: ${reason || 'Belirtilmedi'}`,
+      data: { approvalId: approval.id }
+    });
+
+    res.json({ success: true, message: 'Talep reddedildi' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Fiyat değişikliği talebi oluştur (Staff için)
+exports.requestPriceChange = async (req, res, next) => {
+  try {
+    const { productId, newPrice, newComparePrice, notes } = req.body;
+
+    const product = await Product.findByPk(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
+    }
+
+    // Onay gerekiyor mu kontrol et
+    const requireApproval = await Setting.findOne({ where: { key: 'require_price_approval' } });
+    
+    if (requireApproval?.value === 'true' && req.user.role === 'staff') {
+      // Onay talebi oluştur
+      const approval = await PendingApproval.create({
+        type: 'price_change',
+        entityType: 'product',
+        entityId: productId,
+        oldValue: { price: product.price, comparePrice: product.comparePrice },
+        newValue: { price: newPrice, comparePrice: newComparePrice },
+        requestedBy: req.user.id,
+        notes
+      });
+
+      // Admin/Manager'lara bildirim gönder
+      const managers = await User.findAll({
+        where: { role: { [Op.in]: ['admin', 'manager'] }, isActive: true }
+      });
+
+      for (const manager of managers) {
+        await Notification.create({
+          userId: manager.id,
+          type: 'approval_request',
+          title: 'Yeni Onay Talebi',
+          message: `${req.user.firstName} ${req.user.lastName} bir fiyat değişikliği talebi oluşturdu.`,
+          data: { approvalId: approval.id }
+        });
+      }
+
+      // Email bildirimi
+      const adminEmail = await Setting.findOne({ where: { key: 'admin_notification_email' } });
+      if (adminEmail?.value) {
+        await emailService.sendApprovalRequestNotification({
+          ...approval.toJSON(),
+          requester: req.user
+        }, adminEmail.value);
+      }
+
+      return res.json({
+        success: true,
+        message: 'Fiyat değişikliği talebi oluşturuldu. Onay bekleniyor.',
+        data: { approvalId: approval.id }
+      });
+    }
+
+    // Onay gerekmiyorsa direkt uygula
+    await product.update({
+      price: newPrice,
+      comparePrice: newComparePrice
+    });
+
+    await cacheFlush('products:*');
+
+    res.json({ success: true, message: 'Fiyat güncellendi' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==================== PRODUCT VISIBILITY ====================
+
+// Ürünü satıştan kaldır
+exports.removeFromSale = async (req, res, next) => {
+  try {
+    const { productId, reason } = req.body;
+
+    const product = await Product.findByPk(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
+    }
+
+    // Staff için onay gerekiyor
+    const requireApproval = await Setting.findOne({ where: { key: 'require_visibility_approval' } });
+
+    if (requireApproval?.value === 'true' && req.user.role === 'staff') {
+      const approval = await PendingApproval.create({
+        type: 'product_visibility',
+        entityType: 'product',
+        entityId: productId,
+        oldValue: { isRemovedFromSale: product.isRemovedFromSale },
+        newValue: { isRemovedFromSale: true, removalReason: reason },
+        requestedBy: req.user.id,
+        notes: reason
+      });
+
+      return res.json({
+        success: true,
+        message: 'Satıştan kaldırma talebi oluşturuldu. Onay bekleniyor.',
+        data: { approvalId: approval.id }
+      });
+    }
+
+    // Direkt uygula
+    await product.update({
+      isRemovedFromSale: true,
+      removedAt: new Date(),
+      removedBy: req.user.id,
+      removalReason: reason
+    });
+
+    await cacheFlush('products:*');
+
+    res.json({ success: true, message: 'Ürün satıştan kaldırıldı' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Ürünü tekrar satışa al
+exports.returnToSale = async (req, res, next) => {
+  try {
+    const { productId } = req.body;
+
+    const product = await Product.findByPk(productId);
+    if (!product) {
+      return res.status(404).json({ success: false, message: 'Ürün bulunamadı' });
+    }
+
+    await product.update({
+      isRemovedFromSale: false,
+      removedAt: null,
+      removedBy: null,
+      removalReason: null
+    });
+
+    await cacheFlush('products:*');
+
+    res.json({ success: true, message: 'Ürün tekrar satışa alındı' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Satıştan kaldırılan ürünleri listele
+exports.getRemovedProducts = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
+
+    const { count, rows } = await Product.findAndCountAll({
+      where: { isRemovedFromSale: true },
+      include: [
+        { model: User, as: 'remover', attributes: ['id', 'firstName', 'lastName'], foreignKey: 'removedBy' }
+      ],
+      order: [['removedAt', 'DESC']],
+      limit: parseInt(limit),
+      offset
+    });
+
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(count / limit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==================== NOTIFICATIONS ====================
+
+// Kullanıcının bildirimlerini getir
+exports.getNotifications = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 20, unreadOnly = false } = req.query;
+    const offset = (page - 1) * limit;
+
+    const where = { userId: req.user.id };
+    if (unreadOnly === 'true') where.isRead = false;
+
+    const { count, rows } = await Notification.findAndCountAll({
+      where,
+      order: [['createdAt', 'DESC']],
+      limit: parseInt(limit),
+      offset
+    });
+
+    const unreadCount = await Notification.count({
+      where: { userId: req.user.id, isRead: false }
+    });
+
+    res.json({
+      success: true,
+      data: rows,
+      unreadCount,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(count / limit)
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Bildirimi okundu işaretle
+exports.markNotificationRead = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    await Notification.update(
+      { isRead: true, readAt: new Date() },
+      { where: { id, userId: req.user.id } }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Tüm bildirimleri okundu işaretle
+exports.markAllNotificationsRead = async (req, res, next) => {
+  try {
+    await Notification.update(
+      { isRead: true, readAt: new Date() },
+      { where: { userId: req.user.id, isRead: false } }
+    );
+
+    res.json({ success: true });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ==================== ACTIVITY LOG ====================
+
+// Aktivite loglarını getir
+exports.getActivityLogs = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 50, action, userId, entityType } = req.query;
+    const offset = (page - 1) * limit;
+
+    const where = {};
+    if (action) where.action = action;
+    if (userId) where.userId = userId;
+    if (entityType) where.entityType = entityType;
+
+    const { count, rows } = await ActivityLog.findAndCountAll({
+      where,
+      include: [{ model: User, attributes: ['id', 'firstName', 'lastName', 'email', 'role'] }],
+      order: [['createdAt', 'DESC']],
+      limit: parseInt(limit),
+      offset
+    });
+
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(count / limit)
       }
     });
   } catch (error) {

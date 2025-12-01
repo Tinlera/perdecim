@@ -27,6 +27,14 @@ router.post('/register', authLimiter, registerValidation, authController.registe
 router.post('/login', authLimiter, loginValidation, authController.login);
 router.post('/refresh-token', authController.refreshToken);
 
+// Google OAuth
+router.post('/google', authLimiter, [
+  body('googleId').notEmpty().withMessage('Google ID gerekli'),
+  body('email').isEmail().withMessage('Geçerli bir email adresi gerin'),
+  body('firstName').trim().notEmpty().withMessage('Ad gerekli'),
+  body('lastName').trim().notEmpty().withMessage('Soyad gerekli')
+], authController.googleAuth);
+
 // Password reset routes (public)
 router.post('/forgot-password', authLimiter, [
   body('email').isEmail().withMessage('Geçerli bir email adresi girin')

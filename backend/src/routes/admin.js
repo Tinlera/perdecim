@@ -24,10 +24,30 @@ router.post('/coupons/validate', adminController.validateCoupon);
 // Sales logs (staff can see their own)
 router.get('/sales-logs', staffOrAbove, adminController.getSalesLogs);
 
+// ==================== STAFF ROUTES ====================
+// Notifications
+router.get('/notifications', staffOrAbove, adminController.getNotifications);
+router.put('/notifications/:id/read', staffOrAbove, adminController.markNotificationRead);
+router.put('/notifications/read-all', staffOrAbove, adminController.markAllNotificationsRead);
+
+// Price change request (staff)
+router.post('/products/request-price-change', staffOrAbove, adminController.requestPriceChange);
+
+// Remove from sale request (staff - needs approval if staff)
+router.post('/products/remove-from-sale', staffOrAbove, adminController.removeFromSale);
+
 // ==================== MANAGER ROUTES ====================
 // Stock logs
 router.get('/stock-logs', managerOrAdmin, adminController.getStockLogs);
 router.put('/stock-logs/:id/approve', managerOrAdmin, adminController.approveStockLog);
+
+// Pending Approvals (manager and admin can approve)
+router.get('/pending-approvals', managerOrAdmin, adminController.getPendingApprovals);
+router.put('/pending-approvals/:id/approve', managerOrAdmin, adminController.approveRequest);
+router.put('/pending-approvals/:id/reject', managerOrAdmin, adminController.rejectRequest);
+
+// Return to sale (manager+)
+router.post('/products/return-to-sale', managerOrAdmin, adminController.returnToSale);
 
 // ==================== ADMIN ONLY ROUTES ====================
 router.use(adminOnly);
@@ -68,5 +88,11 @@ router.get('/coupons', adminController.getCoupons);
 router.post('/coupons', adminController.createCoupon);
 router.put('/coupons/:id', adminController.updateCoupon);
 router.delete('/coupons/:id', adminController.deleteCoupon);
+
+// Removed products
+router.get('/products/removed', adminController.getRemovedProducts);
+
+// Activity logs
+router.get('/activity-logs', adminController.getActivityLogs);
 
 module.exports = router;
