@@ -60,9 +60,8 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="lg:col-span-4">
             <Link to="/" className="inline-block group">
-              <span className="font-display text-2xl font-bold">
-                <span className="text-white">Uygunlar</span>
-                <span className="text-amber-500 ml-1">Ev Tekstil</span>
+              <span className="font-display text-2xl md:text-3xl font-bold bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 bg-clip-text text-transparent">
+                Uygunlar Ev Tekstil
               </span>
             </Link>
             <p className="mt-6 text-charcoal-400 leading-relaxed max-w-sm">
@@ -186,7 +185,7 @@ export default function Footer() {
         <div className="py-8 flex flex-col lg:flex-row items-center justify-between gap-6">
           {/* Copyright */}
           <div className="flex flex-col sm:flex-row items-center gap-4 text-sm text-charcoal-500">
-            <span>© {currentYear} Perdecim. Tüm hakları saklıdır.</span>
+            <span>© {currentYear} Uygunlar Ev Tekstil. Tüm hakları saklıdır.</span>
             <div className="hidden sm:block w-1 h-1 bg-charcoal-600 rounded-full" />
             <div className="flex items-center gap-4">
               <Link to="/privacy" className="hover:text-gold-400 transition-colors">
