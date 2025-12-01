@@ -20,6 +20,7 @@ const StaffDashboard = lazy(() => import('./pages/staff/Dashboard'))
 const NotFound = lazy(() => import('./pages/NotFound'))
 const About = lazy(() => import('./pages/About'))
 const Contact = lazy(() => import('./pages/Contact'))
+const Compare = lazy(() => import('./pages/Compare'))
 
 // Loading component
 const PageLoader = () => (
@@ -128,6 +129,14 @@ export default function App() {
           element={
             <Layout>
               <Products />
+            </Layout>
+          }
+        />
+        <Route
+          path="/compare"
+          element={
+            <Layout>
+              <Compare />
             </Layout>
           }
         />

@@ -4,6 +4,8 @@ import Header from './Header'
 import Footer from './Footer'
 import CartDrawer from '../cart/CartDrawer'
 import CurtainAnimation from '../ui/CurtainAnimation'
+import WhatsAppButton from '../ui/WhatsAppButton'
+import CompareBar from '../ui/CompareBar'
 import useAuthStore from '../../store/authStore'
 import useCartStore from '../../store/cartStore'
 
@@ -31,6 +33,8 @@ export default function Layout({ children }) {
       </main>
       <Footer />
       <CartDrawer />
+      <WhatsAppButton />
+      <CompareBar />
     </div>
   )
 }

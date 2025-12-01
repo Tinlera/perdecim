@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Heart, ShoppingBag, Eye } from 'lucide-react'
+import { Heart, ShoppingBag, Eye, GitCompare } from 'lucide-react'
 import useCartStore from '../../store/cartStore'
 import useAuthStore from '../../store/authStore'
+import useCompareStore from '../../store/compareStore'
 import { usersAPI } from '../../services/api'
 import { formatPrice, cn } from '../../lib/utils'
 import toast from 'react-hot-toast'
@@ -11,8 +12,10 @@ import toast from 'react-hot-toast'
 export default function ProductCard({ product, index = 0 }) {
   const { addToCart, isLoading: cartLoading } = useCartStore()
   const { isAuthenticated } = useAuthStore()
+  const { addToCompare, isInCompare } = useCompareStore()
   const [isFavorite, setIsFavorite] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
+  const isCompared = isInCompare(product.id)
 
   const handleAddToCart = async (e) => {
     e.preventDefault()
@@ -115,6 +118,22 @@ export default function ProductCard({ product, index = 0 }) {
               >
                 <Eye className="w-4 h-4" />
               </Link>
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  addToCompare(product)
+                }}
+                className={cn(
+                  'w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-lg',
+                  isCompared
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-white text-charcoal-500 hover:bg-amber-500 hover:text-white'
+                )}
+                title="Karşılaştır"
+              >
+                <GitCompare className="w-4 h-4" />
+              </button>
             </motion.div>
 
             {/* Add to Cart Button */}

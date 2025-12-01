@@ -2,6 +2,7 @@ import { Helmet } from 'react-helmet-async'
 import HeroSlider from '../components/home/HeroSlider'
 import CategoryShowcase from '../components/home/CategoryShowcase'
 import FeaturedProducts from '../components/home/FeaturedProducts'
+import ServicesSection from '../components/home/ServicesSection'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Sparkles, Truck, Shield, HeadphonesIcon, Star, ArrowRight, Play } from 'lucide-react'
@@ -140,6 +141,9 @@ export default function Home() {
 
       {/* Featured Products */}
       <FeaturedProducts />
+
+      {/* Services Section */}
+      <ServicesSection />
 
       {/* Luxury CTA Section */}
       <section className="py-32 relative overflow-hidden">
