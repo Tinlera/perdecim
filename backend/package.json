@@ -34,7 +34,8 @@
     "cookie-parser": "^1.4.6",
     "csurf": "^1.11.0",
     "xss-clean": "^0.1.4",
-    "hpp": "^0.2.3"
+    "hpp": "^0.2.3",
+    "nodemailer": "^6.9.7"
   },
   "devDependencies": {
     "nodemon": "^3.0.2",
