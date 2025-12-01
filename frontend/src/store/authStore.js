@@ -169,6 +169,18 @@ const useAuthStore = create(
         set({ require2FA: false, tempToken: null })
       },
 
+      // Set auth directly (for Google OAuth etc.)
+      setAuth: (user, accessToken, refreshToken) => {
+        localStorage.setItem('accessToken', accessToken)
+        localStorage.setItem('refreshToken', refreshToken)
+        set({
+          user,
+          isAuthenticated: true,
+          require2FA: false,
+          tempToken: null,
+        })
+      },
+
       // Check if user has role
       hasRole: (roles) => {
         const { user } = get()

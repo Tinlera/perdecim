@@ -9,6 +9,7 @@ require('dotenv').config();
 const { connectDB } = require('./config/database');
 const { connectRedis } = require('./config/redis');
 const routes = require('./routes');
+const { initializeAdmin } = require('./utils/initializeAdmin');
 const {
   helmetConfig,
   corsOptions,
@@ -66,6 +67,9 @@ const startServer = async () => {
     
     // Connect to Redis (optional)
     await connectRedis();
+
+    // Initialize admin user and default settings
+    await initializeAdmin();
 
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
