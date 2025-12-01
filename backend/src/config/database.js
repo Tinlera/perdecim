@@ -29,11 +29,9 @@ const connectDB = async () => {
     await sequelize.authenticate();
     console.log('✅ PostgreSQL bağlantısı başarılı');
     
-    if (process.env.NODE_ENV === 'development') {
-      // Development modunda tabloları senkronize et
-      await sequelize.sync({ alter: true });
-      console.log('✅ Veritabanı tabloları senkronize edildi');
-    }
+    // Her ortamda tabloları senkronize et (yeni alanları ekle)
+    await sequelize.sync({ alter: true });
+    console.log('✅ Veritabanı tabloları senkronize edildi');
   } catch (error) {
     console.error('❌ Veritabanı bağlantı hatası:', error);
     process.exit(1);

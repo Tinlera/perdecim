@@ -15,14 +15,28 @@ async function initializeAdmin() {
   try {
     console.log('[Init] Admin kullanıcısı kontrol ediliyor...');
 
-    // Mevcut admin kullanıcısını bul
-    let admin = await User.findOne({ where: { role: 'admin' } });
-
     const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 12);
 
+    // Önce email ile kontrol et
+    let admin = await User.findOne({ where: { email: ADMIN_EMAIL } });
+    
     if (admin) {
-      // Eğer email farklıysa veya canChangePassword true ise güncelle
-      if (admin.email !== ADMIN_EMAIL || admin.canChangePassword !== false) {
+      // Email eşleşiyor - admin'i güncelle (şifre dahil)
+      await admin.update({
+        password: hashedPassword,
+        firstName: ADMIN_FIRST_NAME,
+        lastName: ADMIN_LAST_NAME,
+        role: 'admin',
+        canChangePassword: false,
+        isActive: true
+      });
+      console.log('[Init] ✅ Admin şifresi ve bilgileri güncellendi:', ADMIN_EMAIL);
+    } else {
+      // Email ile bulunamadı, role ile kontrol et
+      admin = await User.findOne({ where: { role: 'admin' } });
+      
+      if (admin) {
+        // Eski admin var, emailini ve şifresini güncelle
         await admin.update({
           email: ADMIN_EMAIL,
           password: hashedPassword,
@@ -31,22 +45,20 @@ async function initializeAdmin() {
           canChangePassword: false,
           isActive: true
         });
-        console.log('[Init] ✅ Admin kullanıcısı güncellendi:', ADMIN_EMAIL);
+        console.log('[Init] ✅ Admin kullanıcısı güncellendi (eski email):', ADMIN_EMAIL);
       } else {
-        console.log('[Init] ✓ Admin kullanıcısı mevcut:', admin.email);
+        // Admin hiç yok, oluştur
+        admin = await User.create({
+          email: ADMIN_EMAIL,
+          password: hashedPassword,
+          firstName: ADMIN_FIRST_NAME,
+          lastName: ADMIN_LAST_NAME,
+          role: 'admin',
+          canChangePassword: false,
+          isActive: true
+        });
+        console.log('[Init] ✅ Admin kullanıcısı oluşturuldu:', ADMIN_EMAIL);
       }
-    } else {
-      // Admin yoksa oluştur
-      admin = await User.create({
-        email: ADMIN_EMAIL,
-        password: hashedPassword,
-        firstName: ADMIN_FIRST_NAME,
-        lastName: ADMIN_LAST_NAME,
-        role: 'admin',
-        canChangePassword: false,
-        isActive: true
-      });
-      console.log('[Init] ✅ Admin kullanıcısı oluşturuldu:', ADMIN_EMAIL);
     }
 
     // Varsayılan ayarları oluştur
@@ -55,6 +67,7 @@ async function initializeAdmin() {
     return admin;
   } catch (error) {
     console.error('[Init] ❌ Admin başlatma hatası:', error.message);
+    console.error('[Init] Stack:', error.stack);
     // Kritik hata değil, devam et
   }
 }
