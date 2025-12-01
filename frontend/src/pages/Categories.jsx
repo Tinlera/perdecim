@@ -38,7 +38,7 @@ export default function Categories() {
   return (
     <>
       <Helmet>
-        <title>Kategoriler - Perdecim</title>
+        <title>Kategoriler - Uygunlar Ev Tekstil</title>
         <meta name="description" content="Tüm perde ve ev tekstili kategorilerimizi keşfedin. Tül, fon, blackout, stor perdeler ve daha fazlası." />
       </Helmet>
 

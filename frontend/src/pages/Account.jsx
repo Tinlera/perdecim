@@ -41,7 +41,7 @@ export default function Account() {
   return (
     <>
       <Helmet>
-        <title>Hesabım - Perdecim</title>
+        <title>Hesabım - Uygunlar Ev Tekstil</title>
       </Helmet>
 
       <div className="min-h-screen bg-charcoal-50 py-8">

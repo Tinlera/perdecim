@@ -593,12 +593,6 @@ export default function AdminProducts() {
                   <input {...register('comparePrice')} type="number" step="0.01" className="input" />
                 </div>
 
-                {/* SKU */}
-                <div>
-                  <label className="label">SKU</label>
-                  <input {...register('sku')} className="input" />
-                </div>
-
                 {/* Stock */}
                 <div>
                   <label className="label">Stok</label>

@@ -6,7 +6,7 @@ export default function NotFound() {
   return (
     <>
       <Helmet>
-        <title>Sayfa Bulunamadı - Perdecim</title>
+        <title>Sayfa Bulunamadı - Uygunlar Ev Tekstil</title>
       </Helmet>
 
       <div className="min-h-[60vh] flex items-center justify-center">

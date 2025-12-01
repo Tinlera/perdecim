@@ -160,7 +160,7 @@ export default function Checkout() {
   return (
     <>
       <Helmet>
-        <title>Ödeme - Perdecim</title>
+        <title>Ödeme - Uygunlar Ev Tekstil</title>
       </Helmet>
 
       <div className="min-h-screen bg-charcoal-50 py-8">
@@ -359,14 +359,74 @@ export default function Checkout() {
                     <h2 className="text-xl font-semibold text-charcoal-700 mb-6">
                       Ödeme Bilgileri
                     </h2>
-                    <div className="bg-charcoal-50 rounded-xl p-6 text-center">
-                      <CreditCard className="w-12 h-12 text-gold-400 mx-auto mb-4" />
-                      <p className="text-charcoal-600 mb-2">
-                        Güvenli ödeme İyzico altyapısı ile gerçekleştirilecektir.
+                    
+                    {/* Demo Payment Notice */}
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                      <p className="text-amber-800 text-sm font-medium">
+                        🔒 Demo Modu - Test için aşağıdaki kart bilgilerini kullanabilirsiniz:
                       </p>
-                      <p className="text-charcoal-500 text-sm">
-                        Siparişi onayladığınızda ödeme sayfasına yönlendirileceksiniz.
-                      </p>
+                      <div className="text-amber-700 text-sm mt-2 space-y-1">
+                        <p>Kart No: <code className="bg-amber-100 px-2 py-0.5 rounded">4054 0600 0000 0004</code></p>
+                        <p>SKT: <code className="bg-amber-100 px-2 py-0.5 rounded">01/30</code> | CVV: <code className="bg-amber-100 px-2 py-0.5 rounded">000</code></p>
+                      </div>
+                    </div>
+
+                    {/* Credit Card Form */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="label">Kart Üzerindeki İsim</label>
+                        <input
+                          type="text"
+                          placeholder="AD SOYAD"
+                          className="input uppercase"
+                          defaultValue={`${user?.firstName || ''} ${user?.lastName || ''}`.toUpperCase()}
+                        />
+                      </div>
+                      <div>
+                        <label className="label">Kart Numarası</label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            placeholder="0000 0000 0000 0000"
+                            maxLength={19}
+                            className="input pl-12"
+                            defaultValue="4054 0600 0000 0004"
+                          />
+                          <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-charcoal-400" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="label">Son Kullanma Tarihi</label>
+                          <input
+                            type="text"
+                            placeholder="AA/YY"
+                            maxLength={5}
+                            className="input"
+                            defaultValue="01/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="label">CVV</label>
+                          <input
+                            type="text"
+                            placeholder="000"
+                            maxLength={4}
+                            className="input"
+                            defaultValue="000"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Security Info */}
+                    <div className="mt-6 flex items-center gap-3 text-charcoal-500 text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-5 bg-charcoal-200 rounded flex items-center justify-center text-xs font-bold">SSL</div>
+                        <span>256-bit Şifreleme</span>
+                      </div>
+                      <span>•</span>
+                      <span>iyzico Güvencesi</span>
                     </div>
                   </div>
                 )}

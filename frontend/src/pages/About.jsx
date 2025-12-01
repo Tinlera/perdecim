@@ -45,8 +45,8 @@ export default function About() {
   return (
     <>
       <Helmet>
-        <title>{pageContent?.metaTitle || 'Hakkımızda - Perdecim'}</title>
-        <meta name="description" content={pageContent?.metaDescription || 'Perdecim hakkında bilgi edinin.'} />
+        <title>{pageContent?.metaTitle || 'Hakkımızda - Uygunlar Ev Tekstil'}</title>
+        <meta name="description" content={pageContent?.metaDescription || 'Uygunlar Ev Tekstil hakkında bilgi edinin.'} />
       </Helmet>
 
       {/* Hero */}
@@ -108,7 +108,7 @@ export default function About() {
                 />
               ) : (
                 <div className="prose prose-lg max-w-none">
-                  <h2>Perdecim Hakkında</h2>
+                  <h2>Uygunlar Ev Tekstil Hakkında</h2>
                   <p>
                     2010 yılından bu yana ev tekstili sektöründe hizmet vermekteyiz. 
                     Kaliteli ürünler ve müşteri memnuniyeti odaklı çalışma anlayışımızla 

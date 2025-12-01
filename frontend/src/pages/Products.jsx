@@ -110,7 +110,7 @@ export default function Products() {
   return (
     <>
       <Helmet>
-        <title>Ürünler - Perdecim</title>
+        <title>Ürünler - Uygunlar Ev Tekstil</title>
         <meta name="description" content="Kaliteli perde çeşitleri. Tül, fon, blackout ve stor perdeler." />
       </Helmet>
 

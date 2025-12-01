@@ -46,8 +46,8 @@ export default function Contact() {
   return (
     <>
       <Helmet>
-        <title>İletişim - Perdecim</title>
-        <meta name="description" content="Perdecim iletişim bilgileri. Bize ulaşın." />
+        <title>İletişim - Uygunlar Ev Tekstil</title>
+        <meta name="description" content="Uygunlar Ev Tekstil iletişim bilgileri. Bize ulaşın." />
       </Helmet>
 
       {/* Hero */}
@@ -223,7 +223,7 @@ export default function Contact() {
                 allowFullScreen=""
                 loading="lazy"
                 referrerPolicy="no-referrer-when-downgrade"
-                title="Perdecim Konum"
+                title="Uygunlar Ev Tekstil Konum"
               />
             </div>
           </motion.div>

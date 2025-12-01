@@ -552,7 +552,7 @@ export default function StaffDashboard() {
   return (
     <>
       <Helmet>
-        <title>Personel Panel - Perdecim</title>
+        <title>Personel Panel - Uygunlar Ev Tekstil</title>
       </Helmet>
 
       <div className="min-h-screen bg-charcoal-50 flex">
@@ -567,7 +567,7 @@ export default function StaffDashboard() {
             {/* Logo */}
             <div className="p-6 border-b border-charcoal-700">
               <span className="font-display text-2xl text-gold-400 font-bold">
-                Perdecim
+                Uygunlar Ev Tekstil
               </span>
               <p className="text-charcoal-400 text-sm mt-1">
                 {isManager ? 'Müdür Panel' : 'Personel Panel'}

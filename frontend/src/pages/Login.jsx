@@ -78,7 +78,7 @@ export default function Login() {
   return (
     <>
       <Helmet>
-        <title>Giriş Yap - Perdecim</title>
+        <title>Giriş Yap - Uygunlar Ev Tekstil</title>
       </Helmet>
 
       <div className="min-h-screen bg-charcoal-50 flex items-center justify-center py-12 px-4">
@@ -91,7 +91,7 @@ export default function Login() {
           <div className="text-center mb-8">
             <Link to="/" className="inline-block">
               <span className="font-display text-4xl text-gold-400 font-bold">
-                Perdecim
+                Uygunlar Ev Tekstil
               </span>
             </Link>
             <p className="text-charcoal-500 mt-2">Hesabınıza giriş yapın</p>

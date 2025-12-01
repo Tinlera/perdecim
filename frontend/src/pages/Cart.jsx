@@ -29,7 +29,7 @@ export default function Cart() {
     return (
       <>
         <Helmet>
-          <title>Sepetim - Perdecim</title>
+          <title>Sepetim - Uygunlar Ev Tekstil</title>
         </Helmet>
         <div className="min-h-[60vh] flex items-center justify-center">
           <div className="text-center">
@@ -52,7 +52,7 @@ export default function Cart() {
   return (
     <>
       <Helmet>
-        <title>Sepetim ({itemCount}) - Perdecim</title>
+        <title>Sepetim ({itemCount}) - Uygunlar Ev Tekstil</title>
       </Helmet>
 
       <div className="min-h-screen bg-charcoal-50 py-8">

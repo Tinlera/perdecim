@@ -124,7 +124,7 @@ export default function ProductDetail() {
   return (
     <>
       <Helmet>
-        <title>{product.metaTitle || product.name} - Perdecim</title>
+        <title>{product.metaTitle || product.name} - Uygunlar Ev Tekstil</title>
         <meta
           name="description"
           content={product.metaDescription || product.shortDescription}

@@ -343,13 +343,28 @@ exports.deleteProduct = async (req, res, next) => {
 
     // Resimleri sil
     if (product.featuredImage) {
-      deleteImage(product.featuredImage);
+      try {
+        deleteImage(product.featuredImage);
+      } catch (e) {
+        console.log('Featured image silinemedi:', e.message);
+      }
     }
     if (product.images && product.images.length > 0) {
-      deleteMultipleImages(product.images);
+      try {
+        // images array obje veya string olabilir
+        const imageUrls = product.images.map(img => typeof img === 'string' ? img : img.url);
+        deleteMultipleImages(imageUrls);
+      } catch (e) {
+        console.log('Images silinemedi:', e.message);
+      }
     }
 
-    // Varyantları sil
+    // İlişkili kayıtları sil
+    const { CartItem, Favorite, StockLog } = require('../models');
+    
+    await CartItem.destroy({ where: { productId: id } });
+    await Favorite.destroy({ where: { productId: id } });
+    await StockLog.destroy({ where: { productId: id } });
     await ProductVariant.destroy({ where: { productId: id } });
 
     // Ürünü sil
@@ -364,6 +379,7 @@ exports.deleteProduct = async (req, res, next) => {
       message: 'Ürün silindi'
     });
   } catch (error) {
+    console.error('Ürün silme hatası:', error);
     next(error);
   }
 };
