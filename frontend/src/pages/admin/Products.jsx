@@ -32,7 +32,24 @@ const productSchema = z.object({
   isActive: z.boolean().optional(),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
+  // Perde özellikleri
+  curtainType: z.string().optional(),
+  fabricType: z.string().optional(),
+  width: z.string().optional(),
+  height: z.string().optional(),
+  lightPermeability: z.string().optional(),
+  roomType: z.string().optional(),
+  mountingType: z.string().optional(),
+  washable: z.boolean().optional(),
+  thermalInsulation: z.boolean().optional(),
 })
+
+// Perde seçenekleri
+const curtainTypes = ['Tül', 'Fon', 'Blackout', 'Stor', 'Zebra', 'Jaluzi', 'Perde Takımı']
+const fabricTypes = ['Polyester', 'Pamuk', 'Kadife', 'Keten', 'Organze', 'Şifon', 'Saten', 'Brode']
+const lightOptions = ['Işık Geçiren', 'Yarı Karartma', 'Tam Karartma']
+const roomTypes = ['Salon', 'Yatak Odası', 'Çocuk Odası', 'Mutfak', 'Banyo', 'Ofis', 'Otel']
+const mountingTypes = ['Ray Sistemi', 'Korniz', 'Perde Askısı', 'Bant Sistem']
 
 export default function AdminProducts() {
   const [products, setProducts] = useState([])
@@ -101,6 +118,7 @@ export default function AdminProducts() {
     if (product) {
       setEditingProduct(product)
       setProductImages(product.images || [])
+      const attrs = product.attributes || {}
       reset({
         name: product.name,
         description: product.description || '',
@@ -114,6 +132,16 @@ export default function AdminProducts() {
         isActive: product.isActive,
         metaTitle: product.metaTitle || '',
         metaDescription: product.metaDescription || '',
+        // Perde özellikleri
+        curtainType: attrs.curtainType || '',
+        fabricType: attrs.fabricType || '',
+        width: attrs.width || '',
+        height: attrs.height || '',
+        lightPermeability: attrs.lightPermeability || '',
+        roomType: attrs.roomType || '',
+        mountingType: attrs.mountingType || '',
+        washable: attrs.washable || false,
+        thermalInsulation: attrs.thermalInsulation || false,
       })
     } else {
       setEditingProduct(null)
@@ -132,6 +160,16 @@ export default function AdminProducts() {
         isActive: true,
         metaTitle: '',
         metaDescription: '',
+        // Perde özellikleri
+        curtainType: '',
+        fabricType: '',
+        width: '',
+        height: '',
+        lightPermeability: '',
+        roomType: '',
+        mountingType: '',
+        washable: false,
+        thermalInsulation: false,
       })
     }
     setIsModalOpen(true)
@@ -223,12 +261,33 @@ export default function AdminProducts() {
   const onSubmit = async (data) => {
     setIsSaving(true)
     try {
+      // Perde özelliklerini attributes olarak grupla
+      const attributes = {
+        curtainType: data.curtainType || null,
+        fabricType: data.fabricType || null,
+        width: data.width || null,
+        height: data.height || null,
+        lightPermeability: data.lightPermeability || null,
+        roomType: data.roomType || null,
+        mountingType: data.mountingType || null,
+        washable: data.washable || false,
+        thermalInsulation: data.thermalInsulation || false,
+      }
+
       const productData = {
-        ...data,
+        name: data.name,
+        description: data.description,
+        shortDescription: data.shortDescription,
         price: parseFloat(data.price),
         comparePrice: data.comparePrice ? parseFloat(data.comparePrice) : null,
         stock: parseInt(data.stock || '0'),
         categoryId: data.categoryId || null,
+        sku: data.sku,
+        isFeatured: data.isFeatured,
+        isActive: data.isActive,
+        metaTitle: data.metaTitle,
+        metaDescription: data.metaDescription,
+        attributes,
       }
 
       let productId = editingProduct?.id
@@ -581,14 +640,101 @@ export default function AdminProducts() {
                   <textarea {...register('description')} rows={4} className="input" />
                 </div>
 
+                {/* Perde Özellikleri */}
+                <div className="md:col-span-2 pt-4 border-t">
+                  <h3 className="font-semibold text-charcoal-700 mb-4">Perde Özellikleri</h3>
+                </div>
+
+                {/* Perde Tipi */}
+                <div>
+                  <label className="label">Perde Tipi</label>
+                  <select {...register('curtainType')} className="input">
+                    <option value="">Seçiniz</option>
+                    {curtainTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Kumaş Türü */}
+                <div>
+                  <label className="label">Kumaş Türü</label>
+                  <select {...register('fabricType')} className="input">
+                    <option value="">Seçiniz</option>
+                    {fabricTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Ölçüler */}
+                <div>
+                  <label className="label">En (cm)</label>
+                  <input {...register('width')} type="number" placeholder="Örn: 150" className="input" />
+                </div>
+
+                <div>
+                  <label className="label">Boy (cm)</label>
+                  <input {...register('height')} type="number" placeholder="Örn: 260" className="input" />
+                </div>
+
+                {/* Işık Geçirgenliği */}
+                <div>
+                  <label className="label">Işık Geçirgenliği</label>
+                  <select {...register('lightPermeability')} className="input">
+                    <option value="">Seçiniz</option>
+                    {lightOptions.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Oda Tipi */}
+                <div>
+                  <label className="label">Uygun Oda Tipi</label>
+                  <select {...register('roomType')} className="input">
+                    <option value="">Seçiniz</option>
+                    {roomTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Montaj Tipi */}
+                <div>
+                  <label className="label">Montaj Tipi</label>
+                  <select {...register('mountingType')} className="input">
+                    <option value="">Seçiniz</option>
+                    {mountingTypes.map(type => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Özellikler */}
+                <div className="flex items-center gap-6">
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" {...register('washable')} className="w-4 h-4" />
+                    <span className="text-sm">Yıkanabilir</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input type="checkbox" {...register('thermalInsulation')} className="w-4 h-4" />
+                    <span className="text-sm">Termal Yalıtım</span>
+                  </label>
+                </div>
+
                 {/* SEO */}
+                <div className="md:col-span-2 pt-4 border-t">
+                  <h3 className="font-semibold text-charcoal-700 mb-4">SEO Ayarları</h3>
+                </div>
+
                 <div className="md:col-span-2">
-                  <label className="label">Meta Başlık (SEO)</label>
+                  <label className="label">Meta Başlık</label>
                   <input {...register('metaTitle')} className="input" />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="label">Meta Açıklama (SEO)</label>
+                  <label className="label">Meta Açıklama</label>
                   <textarea {...register('metaDescription')} rows={2} className="input" />
                 </div>
               </div>

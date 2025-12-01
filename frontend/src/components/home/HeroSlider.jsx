@@ -9,31 +9,39 @@ import 'swiper/css'
 import 'swiper/css/pagination'
 import 'swiper/css/effect-fade'
 
-// Demo slides - gerçek uygulamada API'den gelecek
+// Perde konseptli görseller
 const defaultSlides = [
   {
     id: 1,
-    title: 'Yeni Sezon Perdeler',
-    subtitle: 'Evinize şıklık katın',
-    image: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1920&q=80',
+    title: 'Yeni Sezon Koleksiyonu',
+    subtitle: 'Evinize zarafet katın',
+    image: 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=1920&q=80',
     buttonText: 'Koleksiyonu Keşfet',
-    link: '/products?category=yeni-sezon',
+    link: '/products',
   },
   {
     id: 2,
     title: 'Premium Tül Perdeler',
-    subtitle: 'Işığı içeri davet edin',
+    subtitle: 'Doğal ışığı evinize davet edin',
     image: 'https://images.unsplash.com/photo-1615874959474-d609969a20ed?w=1920&q=80',
-    buttonText: 'İncele',
-    link: '/products?category=tul-perde',
+    buttonText: 'Tülleri İncele',
+    link: '/products?category=tul',
   },
   {
     id: 3,
     title: 'Blackout Perdeler',
-    subtitle: 'Karanlık ve huzurlu geceler',
-    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1920&q=80',
+    subtitle: 'Huzurlu ve karanlık geceler için',
+    image: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?w=1920&q=80',
     buttonText: 'Alışverişe Başla',
     link: '/products?category=blackout',
+  },
+  {
+    id: 4,
+    title: 'Fon Perdeler',
+    subtitle: 'Şık ve modern tasarımlar',
+    image: 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1920&q=80',
+    buttonText: 'Fon Perdeleri Gör',
+    link: '/products?category=fon',
   },
 ]
 
@@ -52,7 +60,7 @@ export default function HeroSlider({ slides = defaultSlides }) {
         pagination={{
           clickable: true,
           bulletClass: 'swiper-pagination-bullet !w-3 !h-3 !bg-white/50 !opacity-100',
-          bulletActiveClass: '!bg-gold-400 !w-8 !rounded-full',
+          bulletActiveClass: '!bg-amber-500 !w-8 !rounded-full',
         }}
         loop
         onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
@@ -68,7 +76,7 @@ export default function HeroSlider({ slides = defaultSlides }) {
                   alt={slide.title}
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-charcoal-900/80 via-charcoal-900/50 to-transparent" />
               </div>
 
               {/* Content */}
@@ -87,7 +95,7 @@ export default function HeroSlider({ slides = defaultSlides }) {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.2 }}
-                        className="text-gold-400 font-medium mb-4"
+                        className="text-amber-400 font-medium mb-4 tracking-wide"
                       >
                         {slide.subtitle}
                       </motion.p>
@@ -106,7 +114,7 @@ export default function HeroSlider({ slides = defaultSlides }) {
                       >
                         <Link
                           to={slide.link}
-                          className="btn-primary inline-flex items-center text-lg px-8 py-4"
+                          className="inline-flex items-center bg-gradient-to-r from-amber-500 to-amber-600 text-charcoal-900 font-semibold text-lg px-8 py-4 rounded-full hover:shadow-lg hover:shadow-amber-500/30 transition-all duration-300"
                         >
                           {slide.buttonText}
                           <ChevronRight className="w-5 h-5 ml-2" />
@@ -132,7 +140,7 @@ export default function HeroSlider({ slides = defaultSlides }) {
           <motion.div
             animate={{ y: [0, 12, 0] }}
             transition={{ duration: 1.5, repeat: Infinity }}
-            className="w-1.5 h-3 bg-gold-400 rounded-full mt-2"
+            className="w-1.5 h-3 bg-amber-500 rounded-full mt-2"
           />
         </div>
       </motion.div>

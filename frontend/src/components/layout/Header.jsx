@@ -102,10 +102,11 @@ export default function Header() {
             {/* Logo */}
             <Link to="/" className="flex items-center group">
               <div className="relative">
-                <span className="font-display text-2xl md:text-3xl font-bold tracking-tight">
-                  <span className="text-gradient-premium">Perdecim</span>
+                <span className="font-display text-xl md:text-2xl font-bold tracking-tight">
+                  <span className="text-charcoal-800">Uygunlar</span>
+                  <span className="text-amber-600 ml-1">Ev Tekstil</span>
                 </span>
-                <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-gold-400 to-gold-600 group-hover:w-full transition-all duration-500" />
+                <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-amber-500 to-amber-600 group-hover:w-full transition-all duration-500" />
               </div>
             </Link>
 
@@ -358,7 +359,7 @@ export default function Header() {
               <div className="p-6">
                 {/* Close Button */}
                 <div className="flex justify-between items-center mb-8">
-                  <span className="font-display text-2xl font-bold text-gradient-premium">Perdecim</span>
+                  <span className="font-display text-xl font-bold"><span className="text-charcoal-800">Uygunlar</span> <span className="text-amber-600">Ev Tekstil</span></span>
                   <button
                     onClick={closeMobileMenu}
                     className="p-2 rounded-full hover:bg-charcoal-100 transition-colors"

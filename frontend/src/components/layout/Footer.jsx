@@ -60,13 +60,14 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="lg:col-span-4">
             <Link to="/" className="inline-block group">
-              <span className="font-display text-3xl font-bold text-gradient-premium">
-                Perdecim
+              <span className="font-display text-2xl font-bold">
+                <span className="text-white">Uygunlar</span>
+                <span className="text-amber-500 ml-1">Ev Tekstil</span>
               </span>
             </Link>
             <p className="mt-6 text-charcoal-400 leading-relaxed max-w-sm">
-              1998'den bu yana premium perde ve ev tekstili ürünleriyle yaşam 
-              alanlarınıza zarafet katıyoruz. İtalyan kumaşlar, özgün tasarımlar.
+              Kaliteli perde ve ev tekstili ürünleriyle yaşam alanlarınıza 
+              zarafet katıyoruz. Uygun fiyat, üstün kalite.
             </p>
             
             {/* Contact */}

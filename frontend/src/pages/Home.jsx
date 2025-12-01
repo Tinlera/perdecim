@@ -40,10 +40,10 @@ export default function Home() {
   return (
     <>
       <Helmet>
-        <title>Perdecim - Lüks Perde & Ev Tekstili Koleksiyonu</title>
+        <title>Uygunlar Ev Tekstil - Kaliteli Perde & Ev Tekstili</title>
         <meta
           name="description"
-          content="Premium perde koleksiyonları ve ev tekstili. İtalyan kumaşlar, özel tasarımlar. Ücretsiz kurulum ve 2 yıl garanti."
+          content="Kaliteli perde koleksiyonları ve ev tekstili. Uygun fiyatlar, üstün kalite. Ücretsiz kurulum hizmeti."
         />
       </Helmet>
 

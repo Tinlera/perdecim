@@ -56,7 +56,7 @@ const AdminOverview = () => {
     { label: 'Bugünkü Sipariş', value: stats?.todayOrders || 0, icon: ShoppingCart, color: 'bg-blue-500' },
     { label: 'Bugünkü Gelir', value: formatPrice(stats?.todayRevenue || 0), icon: DollarSign, color: 'bg-green-500' },
     { label: 'Aylık Sipariş', value: stats?.monthlyOrders || 0, icon: TrendingUp, color: 'bg-purple-500' },
-    { label: 'Aylık Gelir', value: formatPrice(stats?.monthlyRevenue || 0), icon: DollarSign, color: 'bg-gold-500' },
+    { label: 'Aylık Gelir', value: formatPrice(stats?.monthlyRevenue || 0), icon: DollarSign, color: 'bg-amber-500' },
     { label: 'Toplam Müşteri', value: stats?.totalUsers || 0, icon: Users, color: 'bg-indigo-500' },
     { label: 'Toplam Ürün', value: stats?.totalProducts || 0, icon: Package, color: 'bg-pink-500' },
     { label: 'Düşük Stok', value: stats?.lowStockProducts || 0, icon: AlertTriangle, color: 'bg-orange-500' },
@@ -122,24 +122,24 @@ export default function AdminDashboard() {
   return (
     <>
       <Helmet>
-        <title>Admin Panel - Perdecim</title>
+        <title>Admin Panel - Uygunlar Ev Tekstil</title>
       </Helmet>
 
       <div className="min-h-screen bg-charcoal-50 flex">
         {/* Sidebar */}
         <aside
           className={cn(
-            'fixed inset-y-0 left-0 z-50 w-64 bg-charcoal-800 transform transition-transform lg:translate-x-0 lg:static',
+            'fixed inset-y-0 left-0 z-50 w-64 bg-charcoal-900 transform transition-transform lg:translate-x-0 lg:static',
             isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
           )}
         >
           <div className="flex flex-col h-full">
             {/* Logo */}
-            <div className="p-6 border-b border-charcoal-700">
-              <span className="font-display text-2xl text-gold-400 font-bold">
-                Perdecim
+            <div className="p-6 border-b border-charcoal-800">
+              <span className="font-display text-xl text-amber-500 font-bold">
+                Uygunlar Ev Tekstil
               </span>
-              <p className="text-charcoal-400 text-sm mt-1">Admin Panel</p>
+              <p className="text-charcoal-500 text-sm mt-1">Yönetim Paneli</p>
             </div>
 
             {/* Navigation */}
@@ -154,8 +154,8 @@ export default function AdminDashboard() {
                     cn(
                       'flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors',
                       isActive
-                        ? 'bg-gold-500 text-white'
-                        : 'text-charcoal-300 hover:bg-charcoal-700'
+                        ? 'bg-amber-500 text-charcoal-900'
+                        : 'text-charcoal-400 hover:bg-charcoal-800 hover:text-white'
                     )
                   }
                 >
@@ -166,21 +166,19 @@ export default function AdminDashboard() {
             </nav>
 
             {/* User */}
-            <div className="p-4 border-t border-charcoal-700">
+            <div className="p-4 border-t border-charcoal-800">
               <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-gold-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-medium">
-                    {user?.firstName?.charAt(0)}
-                  </span>
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center">
+                  <span className="text-charcoal-900 font-bold">FC</span>
                 </div>
                 <div>
-                  <p className="text-white font-medium">{user?.firstName}</p>
-                  <p className="text-charcoal-400 text-sm">Yönetici</p>
+                  <p className="text-white font-medium">Fatih Can Uygun</p>
+                  <p className="text-charcoal-500 text-sm">İşletme Sahibi</p>
                 </div>
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center space-x-2 text-charcoal-400 hover:text-white w-full"
+                className="flex items-center space-x-2 text-charcoal-500 hover:text-white w-full transition-colors"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Çıkış Yap</span>
@@ -209,7 +207,7 @@ export default function AdminDashboard() {
                 <Menu className="w-6 h-6" />
               </button>
               <div className="flex items-center space-x-4">
-                <a href="/" target="_blank" className="text-charcoal-500 hover:text-gold-500 text-sm">
+                <a href="/" target="_blank" className="text-charcoal-500 hover:text-amber-600 text-sm">
                   Siteyi Görüntüle →
                 </a>
               </div>
